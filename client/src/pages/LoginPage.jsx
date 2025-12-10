@@ -30,6 +30,9 @@ export default function LoginPage(){
           <Form.Item name="password" label="Password" rules={[{required:true}]}> <Input.Password/> </Form.Item>
           <Form.Item>
             <Button type="primary" htmlType="submit">Login</Button>
+            </Form.Item>
+          <Form.Item style={{textAlign: 'center', marginBottom: 0}}>
+            Chưa có tài khoản? <Link to="/dangki">Đăng ký ngay</Link>
           </Form.Item>
         </Form>
       </Card>

@@ -5,6 +5,7 @@ import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard'
 import Teams from './pages/Teams'
 import Home from './pages/Home'
+import DangKi from './pages/dangki.jsx'
 import { getToken, getUser, removeToken } from './utils/auth'
 
 const { Header, Content } = Layout
@@ -50,13 +51,13 @@ export default function MainContent(){
                 Hãy đăng nhập
               </Button>
             </Link>
-          
           )}
         </Header>
         <Content style={{padding:24}}>
           <Routes>
             <Route path="/" element={<Home/>} />
             <Route path="/login" element={<LoginPage/>} />
+            <Route path="/dangki" element={<DangKi/>} />
             <Route path="/dashboard" element={<Protected><Dashboard/></Protected>} />
             <Route path="/teams" element={<Protected><Teams/></Protected>} />
           </Routes>

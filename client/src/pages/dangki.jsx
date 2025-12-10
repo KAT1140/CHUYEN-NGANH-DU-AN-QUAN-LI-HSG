@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios'; // Đảm bảo bạn đã cài đặt: npm install axios
 
 // Địa chỉ API của bạn
-const REGISTER_API_URL = 'http://localhost:5173/register'; 
+const REGISTER_API_URL = '/api/auth/register'; 
 
 const DangKi = () => {
   // 1. STATE - Quản lý dữ liệu form và trạng thái tải
