@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { Card, Button } from 'antd'
 import { Link, useNavigate } from 'react-router-dom'
-import { getUser, fetchMe } from '../auth'
+import { getUser, fetchMe } from '../utils/auth'
 
 export default function Home(){
   const [user, setUser] = useState(getUser())
