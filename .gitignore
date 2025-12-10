@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+client/node_modules/
+client/dist/
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.cache/

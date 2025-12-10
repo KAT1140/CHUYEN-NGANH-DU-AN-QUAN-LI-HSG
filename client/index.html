@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Hệ thống quản lý đội học sinh giỏi - Frontend" />
+    <title>HSG Management</title>
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+      html,body,#root{height:100%;}
+      body{margin:0;font-family:Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; background:#f0f2f5;}
+      /* Simple loading placeholder before React mounts */
+      .hsg-loading{min-height:100vh;display:flex;align-items:center;justify-content:center;color:#595959}
+      .hsg-card{background:white;padding:24px;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,0.08);}
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <div class="hsg-loading">
+        <div class="hsg-card">
+          <h2 style="margin:0 0 8px 0">HSG Management</h2>
+          <p style="margin:0;color:#888">Đang khởi động giao diện... Vui lòng đợi</p>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
