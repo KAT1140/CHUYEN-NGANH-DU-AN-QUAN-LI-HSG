@@ -25,8 +25,13 @@ export default function Home(){
               <Button type="primary" style={{marginRight:8}} onClick={()=>navigate('/dashboard')}>Đi tới Dashboard</Button>
               <Button onClick={()=>navigate('/teams')}>Quản lý Teams</Button>
             </>
-          ) : (
-            <Link to="/"><Button type="primary"><a href="/">Trang chủ</a> - Hãy đăng nhập</Button></Link>
+        ) : (
+            // Sửa Link to="/login" và loại bỏ thẻ <a> gây xung đột
+            <Link to="/login">
+              <Button type="primary">
+                Hãy đăng nhập
+              </Button>
+            </Link>
           )}
         </div>
       </Card>

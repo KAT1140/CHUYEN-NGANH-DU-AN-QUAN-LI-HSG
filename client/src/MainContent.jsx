@@ -45,7 +45,12 @@ export default function MainContent(){
             </div>
           ) : (
             // Sửa lại đường dẫn Link để chuyển đến trang Login
-            <Link to="/login"><Button type="primary">Login</Button></Link>
+            <Link to="/login">
+              <Button type="primary">
+                Hãy đăng nhập
+              </Button>
+            </Link>
+          
           )}
         </Header>
         <Content style={{padding:24}}>
