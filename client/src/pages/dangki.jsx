@@ -7,7 +7,7 @@ const REGISTER_API_URL = '/api/auth/register';
 const DangKi = () => {
   // 1. STATE - Quản lý dữ liệu form và trạng thái tải
   const [formData, setFormData] = useState({
-    username: '',
+    name: '',
     email: '',
     password: '',
   });
@@ -41,7 +41,7 @@ const DangKi = () => {
       
       // Xóa form sau khi đăng ký thành công
       setFormData({
-        username: '',
+        name: '',
         email: '',
         password: '',
       });
@@ -72,12 +72,12 @@ const DangKi = () => {
         
         {/* Trường Tên người dùng */}
         <div style={styles.formGroup}>
-          <label htmlFor="username" style={styles.label}>Tên người dùng:</label>
+          <label htmlFor="name" style={styles.label}>Tên người dùng:</label>
           <input
             type="text"
-            id="username"
-            name="username"
-            value={formData.username}
+            id="name"
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             required
             style={styles.input}

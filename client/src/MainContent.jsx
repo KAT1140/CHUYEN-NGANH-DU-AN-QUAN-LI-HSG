@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom'
-import { Layout, Menu, Dropdown, Button } from 'antd'
+import { Layout, Menu, Button, Space } from 'antd' // Thêm Space
 import LoginPage from './pages/LoginPage'
-import Dashboard from './pages/Dashboard'
-import Teams from './pages/Teams'
-import Home from './pages/Home'
-import DangKi from './pages/dangki.jsx'
+import Dashboard from './pages/Dashboard' 
+import Teams from './pages/Teams'         
+import Home from './pages/Home'           
+import DangKi from './pages/dangki.jsx'   
 import { getToken, getUser, removeToken } from './utils/auth'
 
 const { Header, Content } = Layout
@@ -13,7 +13,7 @@ const { Header, Content } = Layout
 // Component này chứa logic cần hook useNavigate
 export default function MainContent(){ 
   const [user, setUser] = useState(getUser())
-  const navigate = useNavigate() // useNavigate() giờ nằm bên trong Router context
+  const navigate = useNavigate() 
 
   useEffect(()=>{
     setUser(getUser())
@@ -26,7 +26,7 @@ export default function MainContent(){
   }
 
   function Protected({ children }){
-    if (!getToken()) return <Navigate to="/" replace />
+    if (!getToken()) return <Navigate to="/login" replace />
     return children
   }
 
@@ -45,12 +45,15 @@ export default function MainContent(){
               <Button size="small" onClick={logout}>Logout</Button>
             </div>
           ) : (
-            // Sửa lại đường dẫn Link để chuyển đến trang Login
-            <Link to="/login">
-              <Button type="primary">
-                Hãy đăng nhập
-              </Button>
-            </Link>
+            // THÊM Link tới Trang Đăng ký
+            <Space> 
+              <Link to="/dangki">
+                <Button>Đăng Ký</Button> 
+              </Link>
+              <Link to="/login">
+                <Button type="primary">Đăng Nhập</Button>
+              </Link>
+            </Space>
           )}
         </Header>
         <Content style={{padding:24}}>
@@ -60,6 +63,7 @@ export default function MainContent(){
             <Route path="/dangki" element={<DangKi/>} />
             <Route path="/dashboard" element={<Protected><Dashboard/></Protected>} />
             <Route path="/teams" element={<Protected><Teams/></Protected>} />
+            <Route path="*" element={<h1 style={{textAlign: 'center', marginTop: 100}}>404 - Trang không tồn tại</h1>} />
           </Routes>
         </Content>
       </Layout>
