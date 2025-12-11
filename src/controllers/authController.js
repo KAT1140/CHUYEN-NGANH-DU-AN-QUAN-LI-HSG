@@ -29,7 +29,9 @@ exports.login = async (req, res) => {
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'Invalid credentials' });
 
-    const payload = { id: user.id, email: user.email };
+    // CẬP NHẬT: Thêm role vào JWT payload
+    const payload = { id: user.id, email: user.email, role: user.role }; 
+    // ------------------------------------
     const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
     res.json({ token, user: sanitizeUser(user) });
   } catch (err) {
