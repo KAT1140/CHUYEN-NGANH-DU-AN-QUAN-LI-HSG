@@ -5,7 +5,6 @@ const fetchAuth = async (url, options = {}) => {
   const token = getToken();
   const headers = {
     ...options.headers,
-    // Chỉ thêm Authorization header nếu có token
     ...(token && { 'Authorization': `Bearer ${token}` }),
   };
   
@@ -36,6 +35,22 @@ export async function createMember(teamId, data){
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
+  })
+  return res.json();
+}
+// <--- THÊM HÀM SỬA VÀ XÓA THÀNH VIÊN
+export async function updateMember(teamId, memberId, data){
+  const res = await fetchAuth(`${API_BASE}/teams/${teamId}/members/${memberId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  })
+  return res.json();
+}
+
+export async function deleteMember(teamId, memberId){
+  const res = await fetchAuth(`${API_BASE}/teams/${teamId}/members/${memberId}`, {
+    method: 'DELETE',
   })
   return res.json();
 }

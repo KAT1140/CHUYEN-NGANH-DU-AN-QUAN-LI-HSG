@@ -223,3 +223,126 @@ export default function Teams(){
     </div>
   )
 }
+
+// --- HÀM XỬ LÝ SỬA ---
+  const handleEdit = (member) => {
+    setEditingMember(member);
+    setIsEditModalVisible(true);
+    editForm.setFieldsValue(member); // Đặt giá trị mặc định cho form
+  };
+
+  const onUpdateMember = async (values) => {
+    try {
+      message.loading({ content: `Đang cập nhật ${values.name}...`, key: 'updateMemberLoading' });
+      
+      const data = await updateMember(teamId, editingMember.id, values);
+      
+      if(data.error) {
+        message.error({ content: data.error, key: 'updateMemberLoading' });
+        return;
+      } 
+      
+      message.success({ content: 'Cập nhật thành công!', key: 'updateMemberLoading', duration: 2 });
+      setIsEditModalVisible(false);
+      setEditingMember(null);
+      fetchMembers(); 
+
+    } catch (err) {
+      message.error('Lỗi mạng khi cập nhật.');
+    }
+  };
+
+  // --- HÀM XỬ LÝ XÓA ---
+  const handleDelete = async (memberId, memberName) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa thành viên ${memberName} không? Hành động này sẽ xóa cả tài khoản liên kết!`)) {
+        return;
+    }
+    try {
+        message.loading({ content: `Đang xóa ${memberName}...`, key: 'deleteMemberLoading' });
+        const data = await deleteMember(teamId, memberId);
+        
+        if (data.error) {
+            message.error({ content: data.error, key: 'deleteMemberLoading' });
+            return;
+        }
+
+        message.success({ content: 'Xóa thành viên thành công', key: 'deleteMemberLoading', duration: 1 });
+        fetchMembers();
+    } catch (err) {
+        message.error('Xóa thất bại do lỗi mạng/server.');
+    }
+  };
+
+  // Cột hiển thị và Thao tác
+  const memberColumns = [
+    { title: 'Tên thành viên', dataIndex: 'name', key: 'name' },
+    { title: 'Mã số HS (Email ĐN)', dataIndex: 'studentId', key: 'studentId' },
+    { title: 'Liên hệ', dataIndex: 'contact', key: 'contact' },
+    {
+        title: 'Thao tác',
+        key: 'action',
+        render: (_, record) => (
+            <Space size="small">
+                <Button 
+                    icon={<EditOutlined />} 
+                    size="small" 
+                    onClick={() => handleEdit(record)}
+                >
+                    Sửa
+                </Button>
+                <Button 
+                    icon={<DeleteOutlined />} 
+                    size="small" 
+                    danger 
+                    onClick={() => handleDelete(record.id, record.name)}
+                >
+                    Xóa
+                </Button>
+            </Space>
+        ),
+    },
+  ];
+
+  return (
+    <>
+      <Card 
+        // ... (phần Card và Table giữ nguyên)
+      >
+        <Table 
+          dataSource={members} 
+          columns={memberColumns} // <-- Dùng cột mới có nút Thao tác
+          rowKey="id" 
+          size="small" 
+          loading={loading}
+          pagination={false} 
+        />
+        
+        {/* Modal Thêm Thành viên (Giữ nguyên) */}
+        {/* ... (Modal Thêm Thành viên) ... */}
+      </Card>
+      
+      {/* Modal Sửa Thành viên */}
+      <Modal
+        title={`Sửa thành viên: ${editingMember ? editingMember.name : ''}`}
+        open={isEditModalVisible}
+        footer={null}
+        onCancel={() => { setIsEditModalVisible(false); setEditingMember(null); }}
+        destroyOnClose
+      >
+        <Form form={editForm} layout="vertical" onFinish={onUpdateMember}>
+          <Form.Item name="name" label="Họ và Tên" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}> 
+            <Input/> 
+          </Form.Item>
+          <Form.Item name="studentId" label="Mã số học sinh (Email ĐN)" rules={[{ required: true, message: 'Vui lòng nhập mã số học sinh!' }]}> 
+            <Input/> 
+          </Form.Item>
+          <Form.Item name="contact" label="Liên hệ (SĐT/Zalo)"> 
+            <Input/> 
+          </Form.Item>
+          <Form.Item>
+            <Button type="primary" htmlType="submit">Lưu thay đổi</Button>
+          </Form.Item>
+        </Form>
+      </Modal>
+    </>
+  );

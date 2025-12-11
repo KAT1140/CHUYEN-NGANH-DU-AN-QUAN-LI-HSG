@@ -8,5 +8,7 @@ router.get('/:id', controller.getById);
 
 router.get('/:teamId/members', controller.getMembersByTeam);
 router.post('/:teamId/members', controller.createMember);
+router.put('/:teamId/members/:memberId', controller.updateMember);
+router.delete('/:teamId/members/:memberId', controller.deleteMember);
 
 module.exports = router;
