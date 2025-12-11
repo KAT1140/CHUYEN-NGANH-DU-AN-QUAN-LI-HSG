@@ -1,7 +1,10 @@
+// File: src/controllers/teamController.js (ĐÃ SỬA LỖI SYNTAX AWAI/TASYNC)
+
 const Team = require('../models/Team');
 const Member = require('../models/Member');
 const User = require('../models/User');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs'); // Sử dụng bcryptjs
+const saltRounds = 10; // Định nghĩa saltRounds
 
 exports.getAll = async (req, res) => {
   try {
@@ -31,36 +34,23 @@ exports.getById = async (req, res) => {
   }
 };
 
-// LOGIC QUẢN LÝ THÀNH VIÊN
 exports.getMembersByTeam = async (req, res) => {
   try {
     const teamId = req.params.teamId;
-    const members = await Member.findAll({ where: { teamId } });
+    const members = await Member.findAll({ where: { teamId }, attributes: { exclude: ['teamId'] } }); 
     res.json({ members });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+
+// LOGIC QUẢN LÝ THÀNH VIÊN (ĐÃ HỢP NHẤT LOGIC TẠO USER VÀ MEMBER)
 exports.createMember = async (req, res) => {
-  try {
-    const teamId = req.params.teamId;
-    const { name, studentId, contact } = req.body;
-    
-    const team = await Team.findByPk(teamId);
-    if (!team) return res.status(404).json({ error: 'Team not found' });
+  const { name, studentId, contact } = req.body;
+  const teamId = req.params.teamId;
 
-    const member = await Member.create({ teamId, name, studentId, contact });
-    res.status(201).json({ member });
-  } catch (err) {
-    if (err.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({ error: 'Mã số học sinh đã tồn tại.' });
-    }
-    res.status(500).json({ error: err.message });
-  }
-};
-
-const defaultPassword = '123456'; // Mật khẩu mặc định
+  const defaultPassword = '123456';
   const email = studentId; // Dùng studentId làm email đăng nhập (do nó là duy nhất)
 
   try {
@@ -71,14 +61,18 @@ const defaultPassword = '123456'; // Mật khẩu mặc định
     // 2. Băm mật khẩu mặc định
     const hashedPassword = await bcrypt.hash(defaultPassword, saltRounds);
 
-    // 3. Tạo tài khoản User (vai trò mặc định là 'user')
+    // 3. Tạo tài khoản User (vai trò mặc định là 'user' = học sinh)
     const user = await User.create({
       name: name,
-      email: email, // Sử dụng studentId làm email đăng nhập
+      email: email, 
       password: hashedPassword,
-      role: 'user' // Phân quyền là học sinh
+      role: 'user' // Vai trò học sinh
     });
-    const member = await Member.create({ teamId, name, studentId, contact, userId: user.id }); // Tùy chọn: Thêm userId vào Member
+
+    // 4. Tạo bản ghi Thành viên (Member) và liên kết với User (nếu cần)
+    // Lưu ý: Nếu bạn muốn lưu userId vào bảng members, bạn cần thêm cột userId vào Member Model. 
+    // Hiện tại, tôi không thấy cột userId trong Member Model, nên tôi sẽ bỏ qua userId trong Member.create.
+    const member = await Member.create({ teamId, name, studentId, contact }); 
 
     res.status(201).json({ 
         member, 
@@ -96,4 +90,6 @@ const defaultPassword = '123456'; // Mật khẩu mặc định
     console.error('Lỗi khi tạo thành viên:', err);
     res.status(500).json({ error: 'Lỗi máy chủ khi tạo thành viên.' });
   }
+};
+
 module.exports = exports;
