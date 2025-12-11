@@ -1,21 +1,25 @@
 import React, { useEffect, useState } from 'react'
-import { Table, Button, Modal, Form, Input, Space, message, Collapse, Card, Tag } from 'antd'
-import { getTeams, createTeam, getMembers, createMember } from '../utils/api' // Thêm getMembers, createMember
-import { TeamOutlined, ReloadOutlined, UserAddOutlined, UserOutlined, ContactsOutlined } from '@ant-design/icons'
+import { Table, Button, Modal, Form, Input, Space, message, Collapse, Card, Tag, Typography } from 'antd'
+import { getTeams, createTeam, getMembers, createMember } from '../utils/api' 
+import { TeamOutlined, ReloadOutlined, UserAddOutlined } from '@ant-design/icons'
 
+const { Title, Text } = Typography;
 const { Panel } = Collapse;
 
-// Component phụ để quản lý thành viên cho từng Team
-function MemberManager({ teamId, teamName, initialMembers = [] }){
-  const [members, setMembers] = useState(initialMembers);
+// =====================================================================
+// COMPONENT PHỤ: QUẢN LÝ THÀNH VIÊN (MemberManager)
+// =====================================================================
+function MemberManager({ teamId, teamName }){
+  const [members, setMembers] = useState([]);
   const [isMemberModalVisible, setIsMemberModalVisible] = useState(false);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   
-  const fetchMembers = async () => {
+  // HÀM SỬ DỤNG AWAIT -> PHẢI CÓ ASYNC
+  const fetchMembers = async () => { 
     setLoading(true);
     try {
-      const data = await getMembers(teamId);
+      const data = await getMembers(teamId); // <-- CÓ AWAIT
       if (data.members) setMembers(data.members);
     } catch (err) {
       message.error('Lấy danh sách thành viên thất bại');
@@ -25,23 +29,31 @@ function MemberManager({ teamId, teamName, initialMembers = [] }){
   };
   
   useEffect(() => {
-      // Tải lại khi component được mount hoặc teamId thay đổi
-      fetchMembers();
+      fetchMembers(); // Gọi hàm async
   }, [teamId]);
 
+  // HÀM SỬ DỤNG AWAIT -> PHẢI CÓ ASYNC
   const onAddMember = async (values) => {
     try {
       message.loading({ content: `Đang thêm thành viên cho ${teamName}...`, key: 'addMemberLoading' });
-      const data = await createMember(teamId, values);
+      
+      const data = await createMember(teamId, values); // <-- CÓ AWAIT
       
       if(data.error) {
         message.error({ content: data.error, key: 'addMemberLoading' });
-      } else {
-        message.success({ content: `Đã thêm thành viên ${values.name}`, key: 'addMemberLoading', duration: 1 });
-        setIsMemberModalVisible(false);
-        form.resetFields();
-        fetchMembers(); // Tải lại danh sách
-      }
+        return;
+      } 
+      
+      message.success({ 
+          content: `Thành công! TK: ${values.studentId}, MK: 123456`, 
+          key: 'addMemberLoading', 
+          duration: 4 
+      });
+      
+      setIsMemberModalVisible(false);
+      form.resetFields();
+      fetchMembers(); 
+      
     } catch (err) {
       message.error('Thêm thành viên lỗi mạng');
     }
@@ -49,21 +61,25 @@ function MemberManager({ teamId, teamName, initialMembers = [] }){
 
   const memberColumns = [
     { title: 'Tên thành viên', dataIndex: 'name', key: 'name' },
-    { title: 'Mã số HS', dataIndex: 'studentId', key: 'studentId' },
+    { title: 'Mã số HS (Email ĐN)', dataIndex: 'studentId', key: 'studentId' },
     { title: 'Liên hệ', dataIndex: 'contact', key: 'contact' },
   ];
 
   return (
-    <Card size="small" title="Danh sách Thành viên" extra={
-      <Button 
-        type="primary" 
-        size="small" 
-        icon={<UserAddOutlined />} 
-        onClick={() => setIsMemberModalVisible(true)}
-      >
-        Thêm thành viên
-      </Button>
-    }>
+    <Card 
+      size="small" 
+      title={<Text strong>Danh sách Thành viên ({members.length})</Text>} 
+      extra={
+        <Button 
+          type="primary" 
+          size="small" 
+          icon={<UserAddOutlined />} 
+          onClick={() => setIsMemberModalVisible(true)}
+        >
+          Thêm thành viên
+        </Button>
+      }
+    >
       <Table 
         dataSource={members} 
         columns={memberColumns} 
@@ -73,6 +89,7 @@ function MemberManager({ teamId, teamName, initialMembers = [] }){
         pagination={false} 
       />
       
+      {/* Modal Thêm Thành viên */}
       <Modal
         title={`Thêm thành viên cho đội ${teamName}`}
         open={isMemberModalVisible}
@@ -81,13 +98,13 @@ function MemberManager({ teamId, teamName, initialMembers = [] }){
         destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={onAddMember}>
-          <Form.Item name="name" label="Họ và Tên" rules={[{ required: true }]}> 
+          <Form.Item name="name" label="Họ và Tên" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}> 
             <Input/> 
           </Form.Item>
-          <Form.Item name="studentId" label="Mã số học sinh" rules={[{ required: true }]}> 
+          <Form.Item name="studentId" label="Mã số học sinh (Dùng làm Email ĐN)" rules={[{ required: true, message: 'Vui lòng nhập mã số học sinh!' }]}> 
             <Input/> 
           </Form.Item>
-          <Form.Item name="contact" label="Liên hệ (Email/SĐT)"> 
+          <Form.Item name="contact" label="Liên hệ (SĐT/Zalo)"> 
             <Input/> 
           </Form.Item>
           <Form.Item>
@@ -98,19 +115,20 @@ function MemberManager({ teamId, teamName, initialMembers = [] }){
     </Card>
   );
 }
-// ------------------------------------------------------------------
-
-// Component chính Teams
+// =====================================================================
+// COMPONENT CHÍNH: TEAMS
+// =====================================================================
 export default function Teams(){
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [form] = Form.useForm() 
 
+  // HÀM SỬ DỤNG AWAIT -> PHẢI CÓ ASYNC
   const fetchTeams = async () => {
     setLoading(true)
     try {
-      const data = await getTeams()
+      const data = await getTeams() // <-- CÓ AWAIT
       setTeams(data.teams || [])
       message.success('Đã tải danh sách đội')
     } catch (err) {
@@ -120,10 +138,11 @@ export default function Teams(){
 
   useEffect(()=>{ fetchTeams() }, [])
 
+  // HÀM SỬ DỤNG AWAIT -> PHẢI CÓ ASYNC
   const onCreate = async (values) => {
     try {
       message.loading({ content: 'Đang tạo đội...', key: 'createTeamLoading' });
-      const data = await createTeam(values)
+      const data = await createTeam(values) // <-- CÓ AWAIT
       
       if (data.error) {
         message.error({ content: data.error, key: 'createTeamLoading' });
@@ -146,14 +165,13 @@ export default function Teams(){
     form.resetFields(); 
   };
   
-  // Dùng Collapse cho giao diện quản lý Team và Member
   const teamItems = teams.map((team) => ({
     key: team.id.toString(),
     label: (
       <Space>
         <TeamOutlined />
         <strong>{team.name}</strong> 
-        <Tag color="blue">Khối {team.grade}</Tag>
+        {team.grade && <Tag color="blue">Khối {team.grade}</Tag>}
       </Space>
     ),
     children: <MemberManager teamId={team.id} teamName={team.name} />,
