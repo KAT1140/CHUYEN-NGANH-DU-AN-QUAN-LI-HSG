@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom'
-import { Layout, Menu, Button, Space } from 'antd' // Thêm Space
+import { Layout, Menu, Button, Space } from 'antd'
 import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Dashboard' 
 import Teams from './pages/Teams'         
@@ -10,7 +10,7 @@ import { getToken, getUser, removeToken } from './utils/auth'
 
 const { Header, Content } = Layout
 
-// Component này chứa logic cần hook useNavigate
+// Component chứa logic cần hook useNavigate
 export default function MainContent(){ 
   const [user, setUser] = useState(getUser())
   const navigate = useNavigate() 
@@ -45,7 +45,7 @@ export default function MainContent(){
               <Button size="small" onClick={logout}>Logout</Button>
             </div>
           ) : (
-            // THÊM Link tới Trang Đăng ký
+            //Link tới Trang Đăng ký
             <Space> 
               <Link to="/dangki">
                 <Button>Đăng Ký</Button> 

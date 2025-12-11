@@ -13,9 +13,7 @@ const { sequelize, connectDB } = require('./src/config/database');
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Dev-time proxy setup moved to startup so we can probe for the actual Vite server address.
-// We'll try environment override first (`VITE_DEV_SERVER`) then localhost/127.0.0.1 and
-// any non-internal IPv4 addresses on this machine.
+
 const http = require('http');
 const https = require('https');
 const os = require('os');

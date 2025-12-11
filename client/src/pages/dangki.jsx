@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import axios from 'axios'; // Đảm bảo bạn đã cài đặt: npm install axios
+import { useNavigate, Link} from 'react-router-dom';
 
 // Địa chỉ API của bạn
 const REGISTER_API_URL = '/api/auth/register'; 
 
 const DangKi = () => {
+  const navigate = useNavigate();
   // 1. STATE - Quản lý dữ liệu form và trạng thái tải
   const [formData, setFormData] = useState({
     name: '',
@@ -121,6 +123,9 @@ const DangKi = () => {
           {isLoading ? 'Đang Xử Lý...' : 'Đăng Ký'}
         </button>
       </form>
+      <p style={{textAlign: 'center', marginTop: '15px'}}>
+        Đã có tài khoản? <Link to="/login">Đăng nhập ngay</Link>
+      </p>
     </div>
   );
 };
