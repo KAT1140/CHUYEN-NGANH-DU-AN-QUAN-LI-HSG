@@ -1,20 +1,24 @@
+// File: src/routes/teamRoutes.js (ĐÃ SỬA LỖI VÀ ÁP DỤNG PHÂN QUYỀN)
+
 const express = require('express');
 const router = express.Router();
 const controller = require('../controllers/teamController');
 
-const { auth, admin } = require('../middleware/authMiddleware');
+// FIX: Import auth và admin bằng destructuring từ authMiddleware
+const { auth, admin } = require('../middleware/authMiddleware'); 
 
+// QUẢN LÝ TEAM (Tạo/Sửa/Xóa cần Admin)
+router.get('/', auth, controller.getAll); 
+router.post('/', auth, admin, controller.create); 
+router.get('/:id', auth, controller.getById); 
+// Bạn có thể thêm các routes update/delete team (cần controller tương ứng)
+// router.put('/:id', auth, admin, controller.update); 
+// router.delete('/:id', auth, admin, controller.delete); 
 
-// QUẢN LÝ TEAM
-router.get('/', auth, controller.getAll); // Xem: Cần đăng nhập
-router.post('/', auth, admin, controller.create); // Tạo: Cần Admin
-router.get('/:id', auth, controller.getById); // Xem chi tiết: Cần đăng nhập
-
-
-// QUẢN LÝ THÀNH VIÊN
-router.get('/:teamId/members', auth, controller.getMembersByTeam); // Xem thành viên: Cần đăng nhập
-router.post('/:teamId/members', auth, admin, controller.createMember); // Tạo thành viên: Cần Admin
-router.put('/:teamId/members/:memberId', auth, admin, controller.updateMember); // Sửa thành viên: Cần Admin
-router.delete('/:teamId/members/:memberId', auth, admin, controller.deleteMember); // Xóa thành viên: Cần Admin
+// QUẢN LÝ THÀNH VIÊN (CRUD)
+router.get('/:teamId/members', auth, controller.getMembersByTeam); 
+router.post('/:teamId/members', auth, admin, controller.createMember); 
+router.put('/:teamId/members/:memberId', auth, admin, controller.updateMember); 
+router.delete('/:teamId/members/:memberId', auth, admin, controller.deleteMember); 
 
 module.exports = router;
