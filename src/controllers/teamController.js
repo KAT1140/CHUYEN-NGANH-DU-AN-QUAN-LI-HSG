@@ -1,5 +1,6 @@
 const Team = require('../models/Team');
 const Member = require('../models/Member');
+const User = require('../models/User');
 
 exports.getAll = async (req, res) => {
   try {
@@ -29,6 +30,7 @@ exports.getById = async (req, res) => {
   }
 };
 
+// LOGIC QUẢN LÝ THÀNH VIÊN
 exports.getMembersByTeam = async (req, res) => {
   try {
     const teamId = req.params.teamId;
@@ -56,3 +58,4 @@ exports.createMember = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+module.exports = exports;
