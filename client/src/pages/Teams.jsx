@@ -1,7 +1,10 @@
+// File: client/src/pages/Teams.jsx (ĐÃ SỬA LỖI CÚ PHÁP 'RETURN' VÀ CHỨC NĂNG CRUD MEMBER)
+
 import React, { useEffect, useState } from 'react'
 import { Table, Button, Modal, Form, Input, Space, message, Collapse, Card, Tag, Typography } from 'antd'
-import { getTeams, createTeam, getMembers, createMember } from '../utils/api' 
-import { TeamOutlined, ReloadOutlined, UserAddOutlined } from '@ant-design/icons'
+// Import các hàm API
+import { getTeams, createTeam, getMembers, createMember, updateMember, deleteMember } from '../utils/api' 
+import { TeamOutlined, ReloadOutlined, UserAddOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -12,14 +15,17 @@ const { Panel } = Collapse;
 function MemberManager({ teamId, teamName }){
   const [members, setMembers] = useState([]);
   const [isMemberModalVisible, setIsMemberModalVisible] = useState(false);
-  const [form] = Form.useForm();
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false); 
+  const [editingMember, setEditingMember] = useState(null); 
+  
+  const [addForm] = Form.useForm();
+  const [editForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   
-  // HÀM SỬ DỤNG AWAIT -> PHẢI CÓ ASYNC
   const fetchMembers = async () => { 
     setLoading(true);
     try {
-      const data = await getMembers(teamId); // <-- CÓ AWAIT
+      const data = await getMembers(teamId);
       if (data.members) setMembers(data.members);
     } catch (err) {
       message.error('Lấy danh sách thành viên thất bại');
@@ -29,15 +35,14 @@ function MemberManager({ teamId, teamName }){
   };
   
   useEffect(() => {
-      fetchMembers(); // Gọi hàm async
+      fetchMembers();
   }, [teamId]);
 
-  // HÀM SỬ DỤNG AWAIT -> PHẢI CÓ ASYNC
   const onAddMember = async (values) => {
     try {
       message.loading({ content: `Đang thêm thành viên cho ${teamName}...`, key: 'addMemberLoading' });
       
-      const data = await createMember(teamId, values); // <-- CÓ AWAIT
+      const data = await createMember(teamId, values); 
       
       if(data.error) {
         message.error({ content: data.error, key: 'addMemberLoading' });
@@ -51,7 +56,7 @@ function MemberManager({ teamId, teamName }){
       });
       
       setIsMemberModalVisible(false);
-      form.resetFields();
+      addForm.resetFields();
       fetchMembers(); 
       
     } catch (err) {
@@ -59,60 +64,161 @@ function MemberManager({ teamId, teamName }){
     }
   };
 
+  // --- HÀM XỬ LÝ SỬA ---
+  const handleEdit = (member) => {
+    setEditingMember(member);
+    setIsEditModalVisible(true);
+    editForm.setFieldsValue(member); 
+  };
+
+  const onUpdateMember = async (values) => {
+    try {
+      message.loading({ content: `Đang cập nhật ${values.name}...`, key: 'updateMemberLoading' });
+      
+      const data = await updateMember(teamId, editingMember.id, values);
+      
+      if(data.error) {
+        message.error({ content: data.error, key: 'updateMemberLoading' });
+        return;
+      } 
+      
+      message.success({ content: 'Cập nhật thành viên thành công!', key: 'updateMemberLoading', duration: 2 });
+      setIsEditModalVisible(false);
+      setEditingMember(null);
+      fetchMembers(); 
+
+    } catch (err) {
+      message.error('Lỗi mạng khi cập nhật.');
+    }
+  };
+
+  // --- HÀM XỬ LÝ XÓA ---
+  const handleDelete = async (memberId, memberName) => {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa thành viên ${memberName} không? Hành động này sẽ xóa cả tài khoản liên kết!`)) {
+        return;
+    }
+    try {
+        message.loading({ content: `Đang xóa ${memberName}...`, key: 'deleteMemberLoading' });
+        const data = await deleteMember(teamId, memberId);
+        
+        if (data.error) {
+            message.error({ content: data.error, key: 'deleteMemberLoading' });
+            return;
+        }
+
+        message.success({ content: 'Xóa thành viên thành công', key: 'deleteMemberLoading', duration: 1 });
+        fetchMembers();
+    } catch (err) {
+        message.error('Xóa thất bại do lỗi mạng/server.');
+    }
+  };
+
+
+  // Cột hiển thị và Thao tác
   const memberColumns = [
     { title: 'Tên thành viên', dataIndex: 'name', key: 'name' },
     { title: 'Mã số HS (Email ĐN)', dataIndex: 'studentId', key: 'studentId' },
     { title: 'Liên hệ', dataIndex: 'contact', key: 'contact' },
+    {
+        title: 'Thao tác',
+        key: 'action',
+        render: (_, record) => (
+            <Space size="small">
+                <Button 
+                    icon={<EditOutlined />} 
+                    size="small" 
+                    onClick={() => handleEdit(record)}
+                >
+                    Sửa
+                </Button>
+                <Button 
+                    icon={<DeleteOutlined />} 
+                    size="small" 
+                    danger 
+                    onClick={() => handleDelete(record.id, record.name)}
+                >
+                    Xóa
+                </Button>
+            </Space>
+        ),
+    },
   ];
 
+  // KHỐI RETURN CHÍNH XÁC (Tránh lỗi 'return' outside of function)
   return (
-    <Card 
-      size="small" 
-      title={<Text strong>Danh sách Thành viên ({members.length})</Text>} 
-      extra={
-        <Button 
-          type="primary" 
-          size="small" 
-          icon={<UserAddOutlined />} 
-          onClick={() => setIsMemberModalVisible(true)}
-        >
-          Thêm thành viên
-        </Button>
-      }
-    >
-      <Table 
-        dataSource={members} 
-        columns={memberColumns} 
-        rowKey="id" 
+    <>
+      <Card 
         size="small" 
-        loading={loading}
-        pagination={false} 
-      />
+        title={<Text strong>Danh sách Thành viên ({members.length})</Text>} 
+        extra={
+          <Button 
+            type="primary" 
+            size="small" 
+            icon={<UserAddOutlined />} 
+            onClick={() => setIsMemberModalVisible(true)}
+          >
+            Thêm thành viên
+          </Button>
+        }
+      >
+        <Table 
+          dataSource={members} 
+          columns={memberColumns} 
+          rowKey="id" 
+          size="small" 
+          loading={loading}
+          pagination={false} 
+        />
+        
+        {/* Modal Thêm Thành viên */}
+        <Modal
+          title={`Thêm thành viên cho đội ${teamName}`}
+          open={isMemberModalVisible}
+          footer={null}
+          onCancel={() => { setIsMemberModalVisible(false); addForm.resetFields(); }}
+          destroyOnClose
+        >
+          <Form form={addForm} layout="vertical" onFinish={onAddMember}>
+            <Form.Item name="name" label="Họ và Tên" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}> 
+              <Input/> 
+            </Form.Item>
+            <Form.Item name="studentId" label="Mã số học sinh (Dùng làm Email ĐN)" rules={[{ required: true, message: 'Vui lòng nhập mã số học sinh!' }]}> 
+              <Input/> 
+            </Form.Item>
+            <Form.Item name="contact" label="Liên hệ (SĐT/Zalo)"> 
+              <Input/> 
+            </Form.Item>
+            <Form.Item>
+              <Button type="primary" htmlType="submit">Thêm</Button>
+            </Form.Item>
+          </Form>
+        </Modal>
+      </Card>
       
-      {/* Modal Thêm Thành viên */}
+      {/* Modal Sửa Thành viên */}
       <Modal
-        title={`Thêm thành viên cho đội ${teamName}`}
-        open={isMemberModalVisible}
+        title={`Sửa thành viên: ${editingMember ? editingMember.name : ''}`}
+        open={isEditModalVisible}
         footer={null}
-        onCancel={() => { setIsMemberModalVisible(false); form.resetFields(); }}
+        onCancel={() => { setIsEditModalVisible(false); setEditingMember(null); editForm.resetFields(); }}
         destroyOnClose
       >
-        <Form form={form} layout="vertical" onFinish={onAddMember}>
+        <Form form={editForm} layout="vertical" onFinish={onUpdateMember}>
           <Form.Item name="name" label="Họ và Tên" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}> 
             <Input/> 
           </Form.Item>
-          <Form.Item name="studentId" label="Mã số học sinh (Dùng làm Email ĐN)" rules={[{ required: true, message: 'Vui lòng nhập mã số học sinh!' }]}> 
+          <Form.Item name="studentId" label="Mã số học sinh (Email ĐN)" rules={[{ required: true, message: 'Vui lòng nhập mã số học sinh!' }]}> 
             <Input/> 
           </Form.Item>
           <Form.Item name="contact" label="Liên hệ (SĐT/Zalo)"> 
             <Input/> 
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit">Thêm</Button>
+            <Button type="primary" htmlType="submit">Lưu thay đổi</Button>
           </Form.Item>
         </Form>
       </Modal>
-    </Card>
+    </>
   );
 }
 // =====================================================================
@@ -124,11 +230,10 @@ export default function Teams(){
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [form] = Form.useForm() 
 
-  // HÀM SỬ DỤNG AWAIT -> PHẢI CÓ ASYNC
   const fetchTeams = async () => {
     setLoading(true)
     try {
-      const data = await getTeams() // <-- CÓ AWAIT
+      const data = await getTeams()
       setTeams(data.teams || [])
       message.success('Đã tải danh sách đội')
     } catch (err) {
@@ -138,11 +243,10 @@ export default function Teams(){
 
   useEffect(()=>{ fetchTeams() }, [])
 
-  // HÀM SỬ DỤNG AWAIT -> PHẢI CÓ ASYNC
   const onCreate = async (values) => {
     try {
       message.loading({ content: 'Đang tạo đội...', key: 'createTeamLoading' });
-      const data = await createTeam(values) // <-- CÓ AWAIT
+      const data = await createTeam(values)
       
       if (data.error) {
         message.error({ content: data.error, key: 'createTeamLoading' });
@@ -223,126 +327,3 @@ export default function Teams(){
     </div>
   )
 }
-
-// --- HÀM XỬ LÝ SỬA ---
-  const handleEdit = (member) => {
-    setEditingMember(member);
-    setIsEditModalVisible(true);
-    editForm.setFieldsValue(member); // Đặt giá trị mặc định cho form
-  };
-
-  const onUpdateMember = async (values) => {
-    try {
-      message.loading({ content: `Đang cập nhật ${values.name}...`, key: 'updateMemberLoading' });
-      
-      const data = await updateMember(teamId, editingMember.id, values);
-      
-      if(data.error) {
-        message.error({ content: data.error, key: 'updateMemberLoading' });
-        return;
-      } 
-      
-      message.success({ content: 'Cập nhật thành công!', key: 'updateMemberLoading', duration: 2 });
-      setIsEditModalVisible(false);
-      setEditingMember(null);
-      fetchMembers(); 
-
-    } catch (err) {
-      message.error('Lỗi mạng khi cập nhật.');
-    }
-  };
-
-  // --- HÀM XỬ LÝ XÓA ---
-  const handleDelete = async (memberId, memberName) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa thành viên ${memberName} không? Hành động này sẽ xóa cả tài khoản liên kết!`)) {
-        return;
-    }
-    try {
-        message.loading({ content: `Đang xóa ${memberName}...`, key: 'deleteMemberLoading' });
-        const data = await deleteMember(teamId, memberId);
-        
-        if (data.error) {
-            message.error({ content: data.error, key: 'deleteMemberLoading' });
-            return;
-        }
-
-        message.success({ content: 'Xóa thành viên thành công', key: 'deleteMemberLoading', duration: 1 });
-        fetchMembers();
-    } catch (err) {
-        message.error('Xóa thất bại do lỗi mạng/server.');
-    }
-  };
-
-  // Cột hiển thị và Thao tác
-  const memberColumns = [
-    { title: 'Tên thành viên', dataIndex: 'name', key: 'name' },
-    { title: 'Mã số HS (Email ĐN)', dataIndex: 'studentId', key: 'studentId' },
-    { title: 'Liên hệ', dataIndex: 'contact', key: 'contact' },
-    {
-        title: 'Thao tác',
-        key: 'action',
-        render: (_, record) => (
-            <Space size="small">
-                <Button 
-                    icon={<EditOutlined />} 
-                    size="small" 
-                    onClick={() => handleEdit(record)}
-                >
-                    Sửa
-                </Button>
-                <Button 
-                    icon={<DeleteOutlined />} 
-                    size="small" 
-                    danger 
-                    onClick={() => handleDelete(record.id, record.name)}
-                >
-                    Xóa
-                </Button>
-            </Space>
-        ),
-    },
-  ];
-
-  return (
-    <>
-      <Card 
-        // ... (phần Card và Table giữ nguyên)
-      >
-        <Table 
-          dataSource={members} 
-          columns={memberColumns} // <-- Dùng cột mới có nút Thao tác
-          rowKey="id" 
-          size="small" 
-          loading={loading}
-          pagination={false} 
-        />
-        
-        {/* Modal Thêm Thành viên (Giữ nguyên) */}
-        {/* ... (Modal Thêm Thành viên) ... */}
-      </Card>
-      
-      {/* Modal Sửa Thành viên */}
-      <Modal
-        title={`Sửa thành viên: ${editingMember ? editingMember.name : ''}`}
-        open={isEditModalVisible}
-        footer={null}
-        onCancel={() => { setIsEditModalVisible(false); setEditingMember(null); }}
-        destroyOnClose
-      >
-        <Form form={editForm} layout="vertical" onFinish={onUpdateMember}>
-          <Form.Item name="name" label="Họ và Tên" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}> 
-            <Input/> 
-          </Form.Item>
-          <Form.Item name="studentId" label="Mã số học sinh (Email ĐN)" rules={[{ required: true, message: 'Vui lòng nhập mã số học sinh!' }]}> 
-            <Input/> 
-          </Form.Item>
-          <Form.Item name="contact" label="Liên hệ (SĐT/Zalo)"> 
-            <Input/> 
-          </Form.Item>
-          <Form.Item>
-            <Button type="primary" htmlType="submit">Lưu thay đổi</Button>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </>
-  );
