@@ -1,4 +1,4 @@
-// File: src/controllers/teamController.js (ĐÃ SỬA LỖI CẤU TRÚC)
+// File: src/controllers/teamController.js (ĐÃ SỬA LỖI CẤU TRÚC ĐỂ ĐẢM BẢO EXPORT)
 
 const Team = require('../models/Team');
 const Member = require('../models/Member');
@@ -133,4 +133,4 @@ exports.deleteMember = async (req, res) => {
   }
 };
 
-module.exports = exports; // Đảm bảo rằng cuối cùng module.exports là exports
+module.exports = exports;
