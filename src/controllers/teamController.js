@@ -1,4 +1,4 @@
-// File: src/controllers/teamController.js (ĐÃ SỬA LỖI CẤU TRÚC ĐỂ ĐẢM BẢO EXPORT)
+// File: src/controllers/teamController.js (ĐÃ SỬA LỖI CẤU TRÚC VÀ LOGIC)
 
 const Team = require('../models/Team');
 const Member = require('../models/Member');
