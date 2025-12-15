@@ -9,10 +9,18 @@ const Member = sequelize.define('Member', {
   teamId: { // Khóa ngoại liên kết với Team
     type: DataTypes.INTEGER,
     references: {
-      model: 'Teams', // Tên bảng Team
+      model: 'Teams',
       key: 'id'
     },
     allowNull: false
+  },
+  userId: { // Khóa ngoại liên kết với User (nếu member cũng là user trong hệ thống)
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'Users',
+      key: 'id'
+    },
+    allowNull: true
   }
 });
 

@@ -9,10 +9,14 @@ export function setToken(token){
 export function removeToken(){
   localStorage.removeItem('token')
   localStorage.removeItem('user')
+  localStorage.removeItem('userRole')
 }
 
 export function setUser(user){
   localStorage.setItem('user', JSON.stringify(user))
+  if (user && user.role) {
+    localStorage.setItem('userRole', user.role)
+  }
 }
 
 export function getUser(){

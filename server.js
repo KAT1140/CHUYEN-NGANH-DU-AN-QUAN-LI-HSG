@@ -9,6 +9,12 @@ const PORT = process.env.PORT || 8080;
 // Sequelize setup
 const { sequelize, connectDB } = require('./src/config/database');
 
+// Load all models để setup associations
+require('./src/models/User');
+require('./src/models/Team');
+require('./src/models/Member');
+require('./src/models/Schedule');
+
 // Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -63,6 +69,7 @@ async function findViteServer() {
 // Routes
 app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/teams', require('./src/routes/teamRoutes'));
+app.use('/api/schedules', require('./src/routes/scheduleRoutes'));
 
 // Serve frontend files:
 // 1) If a production build exists at client/dist, serve it as SPA (recommended for production).

@@ -1,6 +1,7 @@
 // File: client/src/pages/Teams.jsx (ĐÃ SỬA LỖI CÚ PHÁP 'RETURN' VÀ CHỨC NĂNG CRUD MEMBER)
 
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Table, Button, Modal, Form, Input, Space, message, Collapse, Card, Tag, Typography } from 'antd'
 // Import các hàm API
 import { getTeams, createTeam, getMembers, createMember, updateMember, deleteMember } from '../utils/api' 
@@ -21,6 +22,10 @@ function MemberManager({ teamId, teamName }){
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
+  
+  // Get user role from localStorage
+  const userRole = localStorage.getItem('userRole') || 'user';
+  const canAddMember = userRole !== 'user'; // Only admin and teacher can add members
   
   const fetchMembers = async () => { 
     setLoading(true);
@@ -151,14 +156,16 @@ function MemberManager({ teamId, teamName }){
         size="small" 
         title={<Text strong>Danh sách Thành viên ({members.length})</Text>} 
         extra={
-          <Button 
-            type="primary" 
-            size="small" 
-            icon={<UserAddOutlined />} 
-            onClick={() => setIsMemberModalVisible(true)}
-          >
-            Thêm thành viên
-          </Button>
+          canAddMember && (
+            <Button 
+              type="primary" 
+              size="small" 
+              icon={<UserAddOutlined />} 
+              onClick={() => setIsMemberModalVisible(true)}
+            >
+              Thêm thành viên
+            </Button>
+          )
         }
       >
         <Table 
@@ -225,6 +232,7 @@ function MemberManager({ teamId, teamName }){
 // COMPONENT CHÍNH: TEAMS
 // =====================================================================
 export default function Teams(){
+  const navigate = useNavigate()
   const [teams, setTeams] = useState([])
   const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
@@ -234,6 +242,11 @@ export default function Teams(){
     setLoading(true)
     try {
       const data = await getTeams()
+      if (data && data.error === 'Unauthorized') {
+        message.error('Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.');
+        navigate('/login');
+        return;
+      }
       setTeams(data.teams || [])
       message.success('Đã tải danh sách đội')
     } catch (err) {
@@ -247,8 +260,14 @@ export default function Teams(){
     try {
       message.loading({ content: 'Đang tạo đội...', key: 'createTeamLoading' });
       const data = await createTeam(values)
-      
-      if (data.error) {
+
+      if (data && data.error === 'Unauthorized') {
+        message.error({ content: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.', key: 'createTeamLoading' });
+        navigate('/login');
+        return;
+      }
+
+      if (data && data.error) {
         message.error({ content: data.error, key: 'createTeamLoading' });
         return;
       }

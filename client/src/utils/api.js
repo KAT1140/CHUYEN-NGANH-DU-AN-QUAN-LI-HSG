@@ -1,5 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_BASE || '/api'
-import { getToken } from './auth';
+import { getToken, removeToken } from './auth';
 
 const fetchAuth = async (url, options = {}) => {
   const token = getToken();
@@ -7,8 +7,21 @@ const fetchAuth = async (url, options = {}) => {
     ...options.headers,
     ...(token && { 'Authorization': `Bearer ${token}` }),
   };
-  
-  return fetch(url, { ...options, headers });
+
+  const res = await fetch(url, { ...options, headers });
+
+  // Nếu unauthorized, xoá token để buộc đăng nhập lại
+  if (res.status === 401) {
+    removeToken();
+    // Trả về đối tượng giống Response có method json() để các caller có thể gọi `res.json()` an toàn
+    return {
+      ok: false,
+      status: 401,
+      json: async () => ({ error: 'Unauthorized' })
+    };
+  }
+
+  return res;
 };
 
 export async function getTeams(){

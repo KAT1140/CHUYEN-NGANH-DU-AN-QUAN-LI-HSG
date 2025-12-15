@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom'
 import { Layout, Menu, Button, Space } from 'antd'
 import LoginPage from './pages/LoginPage'
-import Dashboard from './pages/Dashboard' 
+import Schedule from './pages/Dashboard' 
 import Teams from './pages/Teams'         
 import Home from './pages/Home'           
 import DangKi from './pages/dangki.jsx'   
@@ -36,7 +36,7 @@ export default function MainContent(){
           <div style={{color:'#fff', fontWeight:700, marginRight:24}}>HSG</div>
           <Menu theme="dark" mode="horizontal" selectable={false} style={{flex:1}}>
             <Menu.Item key="1"><Link to="/">Home</Link></Menu.Item>
-            <Menu.Item key="2"><Link to="/dashboard">Dashboard</Link></Menu.Item>
+            <Menu.Item key="2"><Link to="/dashboard">Xem Lịch</Link></Menu.Item>
             <Menu.Item key="3"><Link to="/teams">Teams</Link></Menu.Item>
           </Menu>
           {user ? (
@@ -61,7 +61,7 @@ export default function MainContent(){
             <Route path="/" element={<Home/>} />
             <Route path="/login" element={<LoginPage/>} />
             <Route path="/dangki" element={<DangKi/>} />
-            <Route path="/dashboard" element={<Protected><Dashboard/></Protected>} />
+            <Route path="/dashboard" element={<Protected><Schedule/></Protected>} />
             <Route path="/teams" element={<Protected><Teams/></Protected>} />
             <Route path="*" element={<h1 style={{textAlign: 'center', marginTop: 100}}>404 - Trang không tồn tại</h1>} />
           </Routes>
