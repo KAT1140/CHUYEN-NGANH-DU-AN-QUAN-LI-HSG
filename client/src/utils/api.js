@@ -12,17 +12,17 @@ const fetchAuth = async (url, options = {}) => {
 };
 
 export async function getTeams(){
-  const res = await fetch(`${API_BASE}/teams`)
-  return res.json()
+  const res = await fetchAuth(`${API_BASE}/teams`);
+  return res.json();
 }
 
 export async function createTeam(data){
-  const res = await fetch(`${API_BASE}/teams`, {
+  const res = await fetchAuth(`${API_BASE}/teams`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data)
-  })
-  return res.json()
+  });
+  return res.json();
 }
 
 export async function getMembers(teamId){
