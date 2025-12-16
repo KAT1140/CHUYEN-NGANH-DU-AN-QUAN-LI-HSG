@@ -21,24 +21,24 @@ const Evaluation = require('./src/models/Evaluation');
 // 3. Setup Associations (Quan hệ giữa các bảng - CHỈ KHAI BÁO 1 LẦN TẠI ĐÂY)
 
 // --- Quan hệ: Team <-> Member ---
-// Một Đội có nhiều Thành viên
-Team.hasMany(Member, { foreignKey: 'teamId', as: 'members' });
-// Một Thành viên thuộc về một Đội
+// Xóa Đội -> Xóa hết Thành viên trong đội
+Team.hasMany(Member, { foreignKey: 'teamId', as: 'members', onDelete: 'CASCADE' });
 Member.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
 
 // --- Quan hệ: User <-> Member ---
-// Một User (Học sinh) có thể là thành viên của nhiều đội
+// Xóa Tài khoản Học sinh -> Xóa hết thông tin thành viên của họ
 User.hasMany(Member, { foreignKey: 'userId', as: 'teamMembers' });
-// Một Thành viên trong đội liên kết với 1 tài khoản User
-Member.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+Member.belongsTo(User, { foreignKey: 'userId', as: 'user', onDelete: 'CASCADE' });
 
 // --- Quan hệ: Score (Điểm) ---
-Score.belongsTo(Member, { foreignKey: 'memberId', as: 'member' });
+// Xóa Thành viên -> Xóa hết Điểm của họ
+Score.belongsTo(Member, { foreignKey: 'memberId', as: 'member', onDelete: 'CASCADE' });
 Member.hasMany(Score, { foreignKey: 'memberId', as: 'scores' });
 Score.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
 
 // --- Quan hệ: Evaluation (Đánh giá) ---
-Evaluation.belongsTo(Member, { foreignKey: 'memberId', as: 'member' });
+// Xóa Thành viên -> Xóa hết Đánh giá của họ
+Evaluation.belongsTo(Member, { foreignKey: 'memberId', as: 'member', onDelete: 'CASCADE' });
 Member.hasMany(Evaluation, { foreignKey: 'memberId', as: 'evaluations' });
 Evaluation.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
 
@@ -55,7 +55,6 @@ const http = require('http');
 const https = require('https');
 const os = require('os');
 
-// Hàm hỗ trợ tìm Vite server (giữ nguyên logic cũ của bạn)
 function probeUrl(url, timeout = 1000) {
   return new Promise((resolve) => {
     try {
@@ -110,7 +109,7 @@ if (fs.existsSync(clientDist)) {
 const start = async () => {
   try {
     await connectDB();
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({ alter: true }); // Tự động cập nhật bảng
 
     if (process.env.NODE_ENV !== 'production') {
       try {

@@ -101,3 +101,30 @@ exports.delete = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+// [MỚI] Lấy danh sách học sinh CHƯA tham gia đội nào
+exports.getAvailable = async (req, res) => {
+  try {
+    // 1. Lấy danh sách ID của những user đã nằm trong bảng Member
+    const occupiedMembers = await Member.findAll({
+      attributes: ['userId'],
+      where: { userId: { [Op.ne]: null } } // Chỉ lấy dòng có userId hợp lệ
+    });
+    
+    const occupiedUserIds = occupiedMembers.map(m => m.userId);
+
+    // 2. Tìm User là 'user' VÀ ID không nằm trong danh sách trên
+    const availableStudents = await User.findAll({
+      where: {
+        role: 'user',
+        id: { [Op.notIn]: occupiedUserIds } // Điều kiện loại trừ
+      },
+      attributes: { exclude: ['password'] },
+      order: [['name', 'ASC']]
+    });
+
+    res.json({ students: availableStudents });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+};

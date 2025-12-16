@@ -5,6 +5,9 @@ const controller = require('../controllers/studentController');
 const { auth } = require('../middleware/authMiddleware');
 const { requireTeacher } = require('../middleware/adminMiddleware'); // Cho phép Teacher và Admin quản lý
 
+// Route lấy danh sách học sinh rảnh (chưa vào đội) -> Đặt lên TRƯỚC route /:id
+router.get('/available', auth, requireTeacher, controller.getAvailable);
+
 router.get('/', auth, requireTeacher, controller.getAll);
 router.post('/', auth, requireTeacher, controller.create);
 router.put('/:id', auth, requireTeacher, controller.update);

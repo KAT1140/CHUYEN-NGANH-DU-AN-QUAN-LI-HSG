@@ -1,15 +1,13 @@
-// File: src/controllers/teamController.js
-
 const Team = require('../models/Team');
 const Member = require('../models/Member');
 const User = require('../models/User'); 
 const bcrypt = require('bcryptjs'); 
 const saltRounds = 10; 
-const { Op } = require('sequelize'); // Đảm bảo đã import Op
+const { Op } = require('sequelize');
 
 const handleSequelizeError = (err, res) => {
     if (err.name === 'SequelizeUniqueConstraintError') {
-      return res.status(400).json({ error: 'Mã số học sinh (hoặc Email) đã tồn tại. Vui lòng kiểm tra.' });
+      return res.status(400).json({ error: 'Mã số học sinh (hoặc Email) đã tồn tại.' });
     }
     if (err.name === 'SequelizeValidationError') {
         return res.status(400).json({ error: err.errors.map(e => e.message).join(', ') });
@@ -18,41 +16,48 @@ const handleSequelizeError = (err, res) => {
     res.status(500).json({ error: 'Lỗi máy chủ nội bộ.' });
 };
 
-// --- SỬA HÀM getAll ---
+// --- 1. LẤY DANH SÁCH ĐỘI (CÓ LỌC MÔN) ---
 exports.getAll = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const role = req.user.role;
-
+    const { id, role, subject } = req.user; // Lấy thêm subject từ token user
     let teams;
-    if (role === 'admin' || role === 'teacher') {
-      // Admin và Teacher xem tất cả đội
+
+    if (role === 'admin') {
+      // Admin xem tất cả
       teams = await Team.findAll({
+        include: [{ model: Member, as: 'members' }]
+      });
+    } else if (role === 'teacher') {
+      // Teacher: Chỉ xem đội có cùng môn với mình
+      let whereCondition = {};
+      
+      if (subject) {
+        whereCondition = { subject: subject };
+      } else {
+        // Nếu giáo viên không có môn (dữ liệu cũ), trả về rỗng để an toàn
+        return res.json({ teams: [] });
+      }
+
+      teams = await Team.findAll({
+        where: whereCondition,
         include: [{ model: Member, as: 'members' }]
       });
     } else {
       // User thường: Chỉ xem đội mình tham gia
-      
-      // B1: Tìm danh sách ID các đội mà user này là thành viên
       const memberships = await Member.findAll({
-        where: { userId: userId },
+        where: { userId: id },
         attributes: ['teamId']
       });
 
-      // Lấy ra mảng các teamId, ví dụ: [1, 3]
       const teamIds = memberships.map(m => m.teamId);
 
       if (teamIds.length === 0) {
-        // Nếu chưa vào đội nào, trả về rỗng ngay
         return res.json({ teams: [] });
       }
 
-      // B2: Chỉ lấy thông tin các Team nằm trong danh sách teamIds
       teams = await Team.findAll({
-        where: {
-          id: { [Op.in]: teamIds } // Dùng toán tử IN
-        },
-        include: [{ model: Member, as: 'members' }] // Vẫn include members để user xem được đồng đội
+        where: { id: { [Op.in]: teamIds } },
+        include: [{ model: Member, as: 'members' }]
       });
     }
     
@@ -63,8 +68,18 @@ exports.getAll = async (req, res) => {
   }
 };
 
+// --- 2. TẠO ĐỘI MỚI (TỰ GÁN MÔN) ---
 exports.create = async (req, res) => {
   try {
+    // Nếu là Teacher, tự động gán môn của đội = môn của Teacher
+    if (req.user.role === 'teacher') {
+      if (!req.user.subject) {
+        return res.status(400).json({ error: 'Tài khoản giáo viên này chưa được gán môn dạy.' });
+      }
+      req.body.subject = req.user.subject;
+    }
+    // Nếu là Admin, subject sẽ được lấy từ req.body (gửi từ frontend)
+
     const team = await Team.create(req.body);
     res.status(201).json({ team });
   } catch (err) {
@@ -72,6 +87,7 @@ exports.create = async (req, res) => {
   }
 };
 
+// --- 3. XEM CHI TIẾT ĐỘI (CHECK QUYỀN) ---
 exports.getById = async (req, res) => {
   try {
     const team = await Team.findByPk(req.params.id, {
@@ -79,10 +95,17 @@ exports.getById = async (req, res) => {
     });
     if (!team) return res.status(404).json({ error: 'Not found' });
     
-    // Bảo mật thêm: Nếu là user thường, kiểm tra xem có trong đội này không mới cho xem chi tiết
+    // Check quyền User thường (phải là thành viên mới được xem)
     if (req.user.role === 'user') {
        const isMember = team.members.some(m => m.userId === req.user.id);
        if (!isMember) return res.status(403).json({ error: 'Bạn không có quyền xem đội này' });
+    }
+    
+    // Check quyền Teacher (phải đúng môn)
+    if (req.user.role === 'teacher') {
+        if (!req.user.subject || team.subject !== req.user.subject) {
+            return res.status(403).json({ error: 'Bạn không được phép xem đội thuộc môn khác' });
+        }
     }
 
     res.json({ team });
@@ -91,21 +114,17 @@ exports.getById = async (req, res) => {
   }
 };
 
-// LOGIC MEMBER CRUD
+// --- 4. LẤY THÀNH VIÊN ---
 exports.getMembersByTeam = async (req, res) => {
   try {
     const teamId = req.params.teamId;
-    const userId = req.user.id;
-    const role = req.user.role;
-
-    // Admin và Teacher xem được tất cả đội, user chỉ xem đội của họ
-    if (role !== 'admin' && role !== 'teacher') {
-      const userMember = await Member.findOne({
-        where: { teamId, userId }
-      });
-      if (!userMember) {
-        return res.status(403).json({ error: 'Bạn không có quyền xem danh sách thành viên của đội này' });
-      }
+    
+    // Logic check quyền (để an toàn)
+    if (req.user.role === 'teacher') {
+        const team = await Team.findByPk(teamId);
+        if (team && team.subject !== req.user.subject) {
+             return res.status(403).json({ error: 'Không có quyền truy cập' });
+        }
     }
 
     const members = await Member.findAll({ 
@@ -118,31 +137,33 @@ exports.getMembersByTeam = async (req, res) => {
   }
 };
 
+// --- 5. THÊM THÀNH VIÊN ---
 exports.createMember = async (req, res) => {
   const { name, studentId, contact } = req.body;
   const teamId = req.params.teamId;
   const userId = req.user.id;
   const role = req.user.role;
-  const defaultPassword = '123456';
+  const defaultPassword = '123'; // Mật khẩu mặc định cho HS mới
   const email = studentId; 
 
   try {
     const team = await Team.findByPk(teamId);
     if (!team) return res.status(404).json({ error: 'Team not found' });
 
-    // Admin và Teacher được thêm member vào mọi đội, user chỉ được thêm vào đội của họ
-    if (role !== 'admin' && role !== 'teacher') {
-      const userMember = await Member.findOne({
-        where: { teamId, userId }
-      });
-      if (!userMember) {
-        return res.status(403).json({ error: 'Bạn không có quyền thêm thành viên vào đội này' });
-      }
+    // Check quyền teacher đúng môn
+    if (role === 'teacher') {
+        if (!req.user.subject || team.subject !== req.user.subject) {
+            return res.status(403).json({ error: 'Bạn không được thêm thành viên vào đội môn khác' });
+        }
     }
 
-    // Logic kiểm tra User đã có chưa
-    let targetUserId = req.body.userId; // Nếu frontend gửi userId lên
+    // Check user thường không được thêm
+    if (role === 'user') {
+         return res.status(403).json({ error: 'Bạn không có quyền này' });
+    }
 
+    // Logic tạo User nếu chưa có
+    let targetUserId = req.body.userId;
     if (!targetUserId) {
         const existingUser = await User.findOne({ where: { email: email } });
         if (existingUser) {
@@ -178,34 +199,31 @@ exports.createMember = async (req, res) => {
   }
 };
 
+// --- 6. CẬP NHẬT THÀNH VIÊN ---
 exports.updateMember = async (req, res) => {
   try {
     const memberId = req.params.memberId;
-    const teamId = req.params.teamId;
-    const userId = req.user.id;
-    const role = req.user.role;
     const { name, studentId, contact } = req.body; 
     
     const member = await Member.findByPk(memberId);
     if (!member) return res.status(404).json({ error: 'Thành viên không tồn tại' });
 
-    // Admin và Teacher được sửa member của mọi đội, user chỉ sửa đội của họ
-    if (role !== 'admin' && role !== 'teacher') {
-      const userMember = await Member.findOne({
-        where: { teamId, userId }
-      });
-      if (!userMember) {
-        return res.status(403).json({ error: 'Bạn không có quyền chỉnh sửa thành viên của đội này' });
-      }
+    // Check quyền
+    if (req.user.role === 'teacher') {
+         const team = await Team.findByPk(member.teamId);
+         if (team && team.subject !== req.user.subject) {
+             return res.status(403).json({ error: 'Không có quyền chỉnh sửa' });
+         }
     }
-    
+
+    // Cập nhật thông tin User gốc nếu cần
     if (member.userId) {
       const user = await User.findByPk(member.userId);
       if (user) {
           if (studentId && studentId !== user.email) {
               const existingUser = await User.findOne({ where: { email: studentId } });
               if (existingUser && existingUser.id !== user.id) {
-                   return res.status(400).json({ error: 'Mã số học sinh mới đã được sử dụng làm tài khoản khác.' });
+                   return res.status(400).json({ error: 'Mã số học sinh mới trùng với tài khoản khác.' });
               }
               await user.update({ name, email: studentId }); 
           } else {
@@ -222,29 +240,22 @@ exports.updateMember = async (req, res) => {
   }
 };
 
+// --- 7. XÓA THÀNH VIÊN ---
 exports.deleteMember = async (req, res) => {
   try {
     const memberId = req.params.memberId;
-    const teamId = req.params.teamId;
-    const userId = req.user.id;
-    const role = req.user.role;
-    
     const member = await Member.findByPk(memberId);
     if (!member) return res.status(404).json({ error: 'Thành viên không tồn tại' });
 
-    // Admin và Teacher được xóa member của mọi đội, user chỉ xóa đội của họ
-    if (role !== 'admin' && role !== 'teacher') {
-      const userMember = await Member.findOne({
-        where: { teamId, userId }
-      });
-      if (!userMember) {
-        return res.status(403).json({ error: 'Bạn không có quyền xóa thành viên của đội này' });
-      }
+    // Check quyền
+    if (req.user.role === 'teacher') {
+         const team = await Team.findByPk(member.teamId);
+         if (team && team.subject !== req.user.subject) {
+             return res.status(403).json({ error: 'Không có quyền xóa' });
+         }
     }
     
-    // Lưu ý: Chỉ xóa khỏi đội (bảng Member), không xóa tài khoản User để giữ lịch sử
     await member.destroy();
-    
     res.json({ message: 'Đã xóa thành viên khỏi đội.' });
   } catch (err) {
     handleSequelizeError(err, res);

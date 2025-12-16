@@ -161,3 +161,9 @@ export async function deleteStudent(id){
   });
   return res.json();
 }
+// File: client/src/utils/api.js (Thêm vào cuối file hoặc gần các hàm student)
+
+export async function getAvailableStudents(){
+  const res = await fetchAuth(`${API_BASE}/students/available`); // Gọi route mới
+  return res.json();
+}

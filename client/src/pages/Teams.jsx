@@ -4,7 +4,12 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Table, Button, Modal, Form, Input, Space, message, Collapse, Card, Tag, Typography, Select } from 'antd'
 // Import các hàm API
-import { getTeams, createTeam, getMembers, createMember, updateMember, deleteMember, getStudents } from '../utils/api' 
+import { 
+  getTeams, createTeam, getMembers, createMember, updateMember, deleteMember, 
+  getStudents, 
+  getAvailableStudents // <--- [QUAN TRỌNG] Import hàm lấy danh sách lọc
+} from '../utils/api' 
+
 import { TeamOutlined, ReloadOutlined, UserAddOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography;
@@ -18,15 +23,15 @@ function MemberManager({ teamId, teamName }){
   const [isMemberModalVisible, setIsMemberModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false); 
   const [editingMember, setEditingMember] = useState(null); 
-  const [students, setStudents] = useState([]);
+  const [students, setStudents] = useState([]); // Danh sách học sinh để chọn
   
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
   const [loading, setLoading] = useState(false);
   
-  // Get user role from localStorage
+  // Lấy role từ localStorage
   const userRole = localStorage.getItem('userRole') || 'user';
-  const canAddMember = userRole !== 'user'; // Only admin and teacher can add members
+  const canAddMember = userRole !== 'user'; // Chỉ admin/teacher được thêm
 
   const fetchMembers = async () => { 
     setLoading(true);
@@ -40,32 +45,40 @@ function MemberManager({ teamId, teamName }){
     }
   };
 
-  const fetchStudents = async () => {
+  // --- HÀM LẤY DANH SÁCH HỌC SINH (ĐÃ LỌC) ---
+  const fetchAvailableStudents = async () => {
     try {
-      const data = await getStudents();
-      if (data && data.error !== 'Unauthorized') {
-        setStudents(data.students || []);
+      // Gọi API lấy danh sách những bạn CHƯA vào đội nào
+      const data = await getAvailableStudents();
+      
+      if (data && data.error === 'Unauthorized') {
+         // Xử lý lỗi auth nếu cần
+      } else if (data && data.students) {
+        setStudents(data.students);
       }
     } catch (err) {
-      console.log('Lỗi tải danh sách học sinh');
+      console.log('Lỗi tải danh sách học sinh:', err);
     }
   };
   
   useEffect(() => {
       fetchMembers();
-      fetchStudents();
-  }, [teamId]);
+      // Khi mở modal thêm mới thì mới cần load danh sách học sinh
+      if (isMemberModalVisible) {
+        fetchAvailableStudents();
+      }
+  }, [teamId, isMemberModalVisible]); // Thêm dependency isMemberModalVisible
 
   const onAddMember = async (values) => {
     try {
       message.loading({ content: `Đang thêm thành viên cho ${teamName}...`, key: 'addMemberLoading' });
       
-      // Get selected student info
+      // Tìm thông tin học sinh trong danh sách đã load
       const selectedStudent = students.find(s => s.id === values.studentId);
       
       const memberData = {
         name: selectedStudent?.name || '',
-        studentId: selectedStudent?.email || '',
+        studentId: selectedStudent?.email || '', // Dùng email làm mã HS
         userId: selectedStudent?.id || values.studentId
       };
       
@@ -85,6 +98,8 @@ function MemberManager({ teamId, teamName }){
       setIsMemberModalVisible(false);
       addForm.resetFields();
       fetchMembers(); 
+      // Sau khi thêm xong, reload lại danh sách available để loại bạn vừa thêm ra
+      fetchAvailableStudents();
       
     } catch (err) {
       message.error('Thêm thành viên lỗi mạng');
@@ -121,7 +136,7 @@ function MemberManager({ teamId, teamName }){
 
   // --- HÀM XỬ LÝ XÓA ---
   const handleDelete = async (memberId, memberName) => {
-    if (!window.confirm(`Bạn có chắc chắn muốn xóa thành viên ${memberName} không? Hành động này sẽ xóa cả tài khoản liên kết!`)) {
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa thành viên ${memberName} không?`)) {
         return;
     }
     try {
@@ -144,7 +159,7 @@ function MemberManager({ teamId, teamName }){
   // Cột hiển thị và Thao tác
   const memberColumns = [
     { title: 'Tên thành viên', dataIndex: 'name', key: 'name' },
-    { title: 'Mã số HS (Email ĐN)', dataIndex: 'studentId', key: 'studentId' },
+    { title: 'Mã số HS', dataIndex: 'studentId', key: 'studentId' },
     { title: 'Liên hệ', dataIndex: 'contact', key: 'contact' },
     {
         title: 'Thao tác',
@@ -210,6 +225,9 @@ function MemberManager({ teamId, teamName }){
           onCancel={() => { setIsMemberModalVisible(false); addForm.resetFields(); }}
           destroyOnClose
         >
+          <div style={{marginBottom: 10, color: '#666', fontSize: 13}}>
+            * Chỉ hiển thị những học sinh chưa tham gia đội nào.
+          </div>
           <Form form={addForm} layout="vertical" onFinish={onAddMember}>
             <Form.Item
               name="studentId"
@@ -217,8 +235,13 @@ function MemberManager({ teamId, teamName }){
               rules={[{ required: true, message: 'Vui lòng chọn học sinh!' }]}
             >
               <Select
-                placeholder="Chọn học sinh từ cơ sở dữ liệu"
+                placeholder="Chọn học sinh từ danh sách..."
                 optionLabelProp="label"
+                showSearch
+                filterOption={(input, option) =>
+                  (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                }
+                // Map danh sách đã lọc vào Option
                 options={students.map(student => ({
                   value: student.id,
                   label: `${student.name} (${student.email})`
@@ -226,7 +249,9 @@ function MemberManager({ teamId, teamName }){
               />
             </Form.Item>
             <Form.Item>
-              <Button type="primary" htmlType="submit">Thêm</Button>
+              <Button type="primary" htmlType="submit" style={{width: '100%'}}>
+                Thêm vào đội
+              </Button>
             </Form.Item>
           </Form>
         </Modal>
@@ -244,10 +269,10 @@ function MemberManager({ teamId, teamName }){
           <Form.Item name="name" label="Họ và Tên" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}> 
             <Input/> 
           </Form.Item>
-          <Form.Item name="studentId" label="Mã số học sinh (Email ĐN)" rules={[{ required: true, message: 'Vui lòng nhập mã số học sinh!' }]}> 
+          <Form.Item name="studentId" label="Mã số học sinh" rules={[{ required: true, message: 'Vui lòng nhập mã số!' }]}> 
             <Input/> 
           </Form.Item>
-          <Form.Item name="contact" label="Liên hệ (SĐT/Zalo)"> 
+          <Form.Item name="contact" label="Liên hệ"> 
             <Input/> 
           </Form.Item>
           <Form.Item>
@@ -258,59 +283,59 @@ function MemberManager({ teamId, teamName }){
     </>
   );
 }
+
 // =====================================================================
 // COMPONENT CHÍNH: TEAMS
 // =====================================================================
 export default function Teams(){
   const navigate = useNavigate()
   const [teams, setTeams] = useState([])
-  const [students, setStudents] = useState([])
+  const [allStudents, setAllStudents] = useState([]) // Dùng cho tạo team mới
   const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [form] = Form.useForm()
 
-  // --- LẤY ROLE ĐỂ PHÂN QUYỀN ---
   const userRole = localStorage.getItem('userRole') || 'user';
-  const canCreateTeam = userRole !== 'user'; // Chỉ admin/teacher được tạo team
-  // ------------------------------
+  const canCreateTeam = userRole !== 'user'; 
 
   const fetchTeams = async () => {
     setLoading(true)
     try {
       const data = await getTeams()
       if (data && data.error === 'Unauthorized') {
-        message.error('Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.');
+        message.error('Phiên đăng nhập không hợp lệ.');
         navigate('/login');
         return;
       }
       setTeams(data.teams || [])
-      if (data && data.teams) {
-          message.success('Đã tải danh sách đội')
-      }
     } catch (err) {
       message.error('Lấy danh sách đội lỗi')
     } finally { setLoading(false) }
   }
 
-  const fetchStudents = async () => {
+  // Khi tạo Team mới, ta cũng nên dùng danh sách rảnh (hoặc tất cả tùy logic)
+  // Ở đây dùng getAvailableStudents để tránh xung đột ngay từ đầu
+  const fetchStudentsForNewTeam = async () => {
     try {
-      const data = await getStudents()
-      if (data && data.error !== 'Unauthorized') {
-        setStudents(data.students || [])
+      const data = await getAvailableStudents();
+      if (data && data.students) {
+        setAllStudents(data.students);
       }
     } catch (err) {
       console.log('Lỗi tải danh sách học sinh')
     }
   }
 
-  useEffect(()=>{ fetchTeams(); fetchStudents(); }, [])
+  useEffect(()=>{ 
+    fetchTeams(); 
+    if (canCreateTeam && isModalVisible) {
+      fetchStudentsForNewTeam();
+    }
+  }, [canCreateTeam, isModalVisible])
 
   const onCreate = async (values) => {
     try {
       message.loading({ content: 'Đang tạo đội...', key: 'createTeamLoading' });
-      
-      // Lấy thông tin học sinh được chọn
-      const selectedStudents = students.filter(s => values.studentIds?.includes(s.id));
       
       const teamData = {
         name: values.name,
@@ -319,25 +344,21 @@ export default function Teams(){
       
       const data = await createTeam(teamData)
 
-      if (data && data.error === 'Unauthorized') {
-        message.error({ content: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.', key: 'createTeamLoading' });
-        navigate('/login');
-        return;
-      }
-
       if (data && data.error) {
         message.error({ content: data.error, key: 'createTeamLoading' });
         return;
       }
 
-      // Thêm học sinh vào đội nếu có chọn
+      // Thêm học sinh vào đội ngay khi tạo (nếu có chọn)
       if (values.studentIds && values.studentIds.length > 0 && data.team) {
-        for (const student of selectedStudents) {
-          await createMember(data.team.id, {
-            name: student.name,
-            studentId: student.email,
-            userId: student.id
-          });
+        // Lấy danh sách student object từ ID
+        const selected = allStudents.filter(s => values.studentIds.includes(s.id));
+        for (const st of selected) {
+           await createMember(data.team.id, {
+             name: st.name,
+             studentId: st.email,
+             userId: st.id
+           });
         }
       }
       
@@ -364,6 +385,7 @@ export default function Teams(){
         <TeamOutlined />
         <strong>{team.name}</strong> 
         {team.grade && <Tag color="blue">Khối {team.grade}</Tag>}
+        <span style={{fontSize: 12, color: '#888'}}>({team.members ? team.members.length : 0} thành viên)</span>
       </Space>
     ),
     children: <MemberManager teamId={team.id} teamName={team.name} />,
@@ -373,7 +395,7 @@ export default function Teams(){
   return (
     <div>
       <Space style={{marginBottom:16}}>
-        {/* CHỈ HIỂN THỊ NÚT TẠO ĐỘI NẾU CÓ QUYỀN */}
+        {/* Nút Tạo đội - Ẩn với user thường */}
         {canCreateTeam && (
           <Button 
             type="primary" 
@@ -385,14 +407,15 @@ export default function Teams(){
         )}
         
         <Button onClick={fetchTeams} icon={<ReloadOutlined />} loading={loading}>
-          Làm mới danh sách đội
+          Làm mới danh sách
         </Button>
       </Space>
 
       <Collapse items={teamItems} />
 
+      {/* Modal Tạo Team Mới */}
       <Modal 
-        title="Tạo đội mới" 
+        title="Tạo đội tuyển mới" 
         open={isModalVisible} 
         footer={null} 
         onCancel={handleCancel} 
@@ -413,23 +436,27 @@ export default function Teams(){
 
           <Form.Item 
             name="studentIds" 
-            label="Chọn học sinh"
+            label="Thêm thành viên ngay (Chỉ hiện HS chưa có đội)"
           >
             <Select
               mode="multiple"
-              placeholder="Chọn một hoặc nhiều học sinh"
+              placeholder="Chọn học sinh..."
               optionLabelProp="label"
+              showSearch
+              filterOption={(input, option) =>
+                 (option?.children ?? '').toLowerCase().includes(input.toLowerCase())
+              }
             >
-              {students.map(student => (
-                <Select.Option key={student.id} value={student.id}>
-                  <span>{student.name} ({student.email})</span>
+              {allStudents.map(student => (
+                <Select.Option key={student.id} value={student.id} label={student.name}>
+                  {student.name} ({student.email})
                 </Select.Option>
               ))}
             </Select>
           </Form.Item>
           
           <Form.Item>
-            <Button type="primary" htmlType="submit">Tạo</Button>
+            <Button type="primary" htmlType="submit" style={{width:'100%'}}>Tạo Đội</Button>
           </Form.Item>
         </Form>
       </Modal>

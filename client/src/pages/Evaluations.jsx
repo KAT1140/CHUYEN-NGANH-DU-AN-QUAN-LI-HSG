@@ -1,7 +1,8 @@
 // File: client/src/pages/Evaluations.jsx
+
 import React, { useState, useEffect } from 'react'
 import { Table, Button, Modal, Form, Input, Select, Space, message, Rate, DatePicker, Tag } from 'antd'
-import { PlusOutlined, DeleteOutlined, ReloadOutlined, SmileOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { getEvaluations, getTeams, createEvaluation, deleteEvaluation } from '../utils/api'
 
@@ -53,32 +54,42 @@ export default function Evaluations(){
 
   const handleCreate = async (values) => {
     try {
+      // Chuẩn bị dữ liệu gửi về server
       const payload = {
         memberId: values.memberId,
         content: values.content,
-        rating: values.rating,
+        rating: values.rating || 5, // Mặc định 5 sao nếu không chọn
         date: values.date ? values.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')
       }
       
       const res = await createEvaluation(payload)
+      
       if (res.error) {
         message.error(res.error)
       } else {
-        message.success('Đã thêm đánh giá')
+        message.success('Đã thêm đánh giá thành công!')
         setIsModalVisible(false)
         form.resetFields()
-        fetchData()
+        fetchData() // Tải lại danh sách ngay lập tức
       }
     } catch (err) {
-      message.error('Lỗi hệ thống')
+      console.error(err)
+      message.error('Lỗi hệ thống hoặc kết nối mạng')
     }
   }
 
   const handleDelete = async (id) => {
-    if(!window.confirm('Xóa đánh giá này?')) return
-    await deleteEvaluation(id)
-    message.success('Đã xóa')
-    fetchData()
+    if(!window.confirm('Bạn có chắc chắn muốn xóa đánh giá này?')) return
+    try {
+        const res = await deleteEvaluation(id)
+        if (res.error) message.error(res.error)
+        else {
+            message.success('Đã xóa đánh giá')
+            fetchData()
+        }
+    } catch (err) {
+        message.error('Lỗi khi xóa')
+    }
   }
 
   const columns = [
@@ -88,7 +99,7 @@ export default function Evaluations(){
       key: 'studentName',
       render: (text, record) => (
         <div>
-          <div style={{fontWeight:600}}>{text}</div>
+          <div style={{fontWeight:600}}>{text || 'Không xác định'}</div>
           <div style={{fontSize:12, color:'#888'}}>{record.member?.studentId}</div>
         </div>
       )
@@ -104,14 +115,14 @@ export default function Evaluations(){
       width: '40%'
     },
     {
-      title: 'Mức độ',
+      title: 'Thái độ',
       dataIndex: 'rating',
       render: (r) => <Rate disabled defaultValue={r} count={10} style={{fontSize:12}} />
     },
     {
       title: 'Giáo viên',
       dataIndex: ['teacher', 'name'],
-      render: (text) => <Tag color="blue">{text}</Tag>
+      render: (text) => <Tag color="blue">{text || 'Admin'}</Tag>
     },
     {
       title: '',
@@ -138,18 +149,24 @@ export default function Evaluations(){
         columns={columns} 
         rowKey="id" 
         loading={loading}
+        locale={{ emptyText: 'Chưa có đánh giá nào' }}
       />
 
       <Modal
-        title="Đánh giá quá trình ôn"
+        title="Thêm đánh giá học sinh"
         open={isModalVisible}
-        onCancel={()=>setIsModalVisible(false)}
+        onCancel={()=>{ setIsModalVisible(false); form.resetFields(); }}
         footer={null}
+        destroyOnClose
       >
         <Form form={form} layout="vertical" onFinish={handleCreate}>
-          <Form.Item name="memberId" label="Chọn học sinh" rules={[{required:true}]}>
+          <Form.Item 
+            name="memberId" 
+            label="Chọn học sinh" 
+            rules={[{required:true, message: 'Vui lòng chọn học sinh!'}]}
+          >
             <Select 
-              placeholder="Tìm học sinh..." 
+              placeholder="Tìm kiếm tên hoặc mã số..." 
               showSearch
               filterOption={(input, option) =>
                 (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
@@ -165,11 +182,15 @@ export default function Evaluations(){
             <DatePicker style={{width:'100%'}} format="DD/MM/YYYY" />
           </Form.Item>
 
-          <Form.Item name="rating" label="Điểm chuyên cần / Thái độ (1-10)">
+          <Form.Item name="rating" label="Điểm chuyên cần / Thái độ (1-10)" initialValue={8}>
             <Rate count={10} />
           </Form.Item>
 
-          <Form.Item name="content" label="Nội dung nhận xét" rules={[{required:true}]}>
+          <Form.Item 
+            name="content" 
+            label="Nội dung nhận xét" 
+            rules={[{required:true, message: 'Vui lòng nhập nhận xét!'}]}
+          >
             <Input.TextArea rows={4} placeholder="Ví dụ: Em làm bài tập đầy đủ, tích cực phát biểu..." />
           </Form.Item>
 
