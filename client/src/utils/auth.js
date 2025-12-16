@@ -10,6 +10,9 @@ export function removeToken(){
   localStorage.removeItem('token')
   localStorage.removeItem('user')
   localStorage.removeItem('userRole')
+  
+  // Gửi tín hiệu để báo cho MainContent biết là đã Đăng xuất
+  window.dispatchEvent(new Event('auth-change')); 
 }
 
 export function setUser(user){
@@ -17,6 +20,9 @@ export function setUser(user){
   if (user && user.role) {
     localStorage.setItem('userRole', user.role)
   }
+  
+  // Gửi tín hiệu để báo cho MainContent biết là đã Đăng nhập/Cập nhật user
+  window.dispatchEvent(new Event('auth-change')); 
 }
 
 export function getUser(){

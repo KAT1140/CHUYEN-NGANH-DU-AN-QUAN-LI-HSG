@@ -1,4 +1,4 @@
-// File: client/src/pages/Teams.jsx (ĐÃ SỬA LỖI CÚ PHÁP 'RETURN' VÀ CHỨC NĂNG CRUD MEMBER)
+// File: client/src/pages/Teams.jsx
 
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -151,27 +151,30 @@ function MemberManager({ teamId, teamName }){
         key: 'action',
         render: (_, record) => (
             <Space size="small">
-                <Button 
-                    icon={<EditOutlined />} 
-                    size="small" 
-                    onClick={() => handleEdit(record)}
-                >
-                    Sửa
-                </Button>
-                <Button 
-                    icon={<DeleteOutlined />} 
-                    size="small" 
-                    danger 
-                    onClick={() => handleDelete(record.id, record.name)}
-                >
-                    Xóa
-                </Button>
+                {canAddMember && (
+                  <>
+                    <Button 
+                        icon={<EditOutlined />} 
+                        size="small" 
+                        onClick={() => handleEdit(record)}
+                    >
+                        Sửa
+                    </Button>
+                    <Button 
+                        icon={<DeleteOutlined />} 
+                        size="small" 
+                        danger 
+                        onClick={() => handleDelete(record.id, record.name)}
+                    >
+                        Xóa
+                    </Button>
+                  </>
+                )}
             </Space>
         ),
     },
   ];
 
-  // KHỐI RETURN CHÍNH XÁC (Tránh lỗi 'return' outside of function)
   return (
     <>
       <Card 
@@ -266,6 +269,11 @@ export default function Teams(){
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [form] = Form.useForm()
 
+  // --- LẤY ROLE ĐỂ PHÂN QUYỀN ---
+  const userRole = localStorage.getItem('userRole') || 'user';
+  const canCreateTeam = userRole !== 'user'; // Chỉ admin/teacher được tạo team
+  // ------------------------------
+
   const fetchTeams = async () => {
     setLoading(true)
     try {
@@ -276,7 +284,9 @@ export default function Teams(){
         return;
       }
       setTeams(data.teams || [])
-      message.success('Đã tải danh sách đội')
+      if (data && data.teams) {
+          message.success('Đã tải danh sách đội')
+      }
     } catch (err) {
       message.error('Lấy danh sách đội lỗi')
     } finally { setLoading(false) }
@@ -363,13 +373,17 @@ export default function Teams(){
   return (
     <div>
       <Space style={{marginBottom:16}}>
-        <Button 
-          type="primary" 
-          icon={<TeamOutlined />} 
-          onClick={()=>setIsModalVisible(true)}
-        >
-          Tạo đội mới
-        </Button>
+        {/* CHỈ HIỂN THỊ NÚT TẠO ĐỘI NẾU CÓ QUYỀN */}
+        {canCreateTeam && (
+          <Button 
+            type="primary" 
+            icon={<TeamOutlined />} 
+            onClick={()=>setIsModalVisible(true)}
+          >
+            Tạo đội mới
+          </Button>
+        )}
+        
         <Button onClick={fetchTeams} icon={<ReloadOutlined />} loading={loading}>
           Làm mới danh sách đội
         </Button>
