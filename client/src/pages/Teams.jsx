@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Table, Button, Modal, Form, Input, Space, message, Collapse, Card, Tag, Typography } from 'antd'
+import { Table, Button, Modal, Form, Input, Space, message, Collapse, Card, Tag, Typography, Select } from 'antd'
 // Import các hàm API
-import { getTeams, createTeam, getMembers, createMember, updateMember, deleteMember } from '../utils/api' 
+import { getTeams, createTeam, getMembers, createMember, updateMember, deleteMember, getStudents } from '../utils/api' 
 import { TeamOutlined, ReloadOutlined, UserAddOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
 
 const { Title, Text } = Typography;
@@ -18,6 +18,7 @@ function MemberManager({ teamId, teamName }){
   const [isMemberModalVisible, setIsMemberModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false); 
   const [editingMember, setEditingMember] = useState(null); 
+  const [students, setStudents] = useState([]);
   
   const [addForm] = Form.useForm();
   const [editForm] = Form.useForm();
@@ -26,7 +27,7 @@ function MemberManager({ teamId, teamName }){
   // Get user role from localStorage
   const userRole = localStorage.getItem('userRole') || 'user';
   const canAddMember = userRole !== 'user'; // Only admin and teacher can add members
-  
+
   const fetchMembers = async () => { 
     setLoading(true);
     try {
@@ -38,16 +39,37 @@ function MemberManager({ teamId, teamName }){
       setLoading(false);
     }
   };
+
+  const fetchStudents = async () => {
+    try {
+      const data = await getStudents();
+      if (data && data.error !== 'Unauthorized') {
+        setStudents(data.students || []);
+      }
+    } catch (err) {
+      console.log('Lỗi tải danh sách học sinh');
+    }
+  };
   
   useEffect(() => {
       fetchMembers();
+      fetchStudents();
   }, [teamId]);
 
   const onAddMember = async (values) => {
     try {
       message.loading({ content: `Đang thêm thành viên cho ${teamName}...`, key: 'addMemberLoading' });
       
-      const data = await createMember(teamId, values); 
+      // Get selected student info
+      const selectedStudent = students.find(s => s.id === values.studentId);
+      
+      const memberData = {
+        name: selectedStudent?.name || '',
+        studentId: selectedStudent?.email || '',
+        userId: selectedStudent?.id || values.studentId
+      };
+      
+      const data = await createMember(teamId, memberData); 
       
       if(data.error) {
         message.error({ content: data.error, key: 'addMemberLoading' });
@@ -55,9 +77,9 @@ function MemberManager({ teamId, teamName }){
       } 
       
       message.success({ 
-          content: `Thành công! TK: ${values.studentId}, MK: 123456`, 
+          content: `Thêm ${selectedStudent?.name} thành công!`, 
           key: 'addMemberLoading', 
-          duration: 4 
+          duration: 2 
       });
       
       setIsMemberModalVisible(false);
@@ -186,14 +208,19 @@ function MemberManager({ teamId, teamName }){
           destroyOnClose
         >
           <Form form={addForm} layout="vertical" onFinish={onAddMember}>
-            <Form.Item name="name" label="Họ và Tên" rules={[{ required: true, message: 'Vui lòng nhập họ tên!' }]}> 
-              <Input/> 
-            </Form.Item>
-            <Form.Item name="studentId" label="Mã số học sinh (Dùng làm Email ĐN)" rules={[{ required: true, message: 'Vui lòng nhập mã số học sinh!' }]}> 
-              <Input/> 
-            </Form.Item>
-            <Form.Item name="contact" label="Liên hệ (SĐT/Zalo)"> 
-              <Input/> 
+            <Form.Item
+              name="studentId"
+              label="Chọn học sinh"
+              rules={[{ required: true, message: 'Vui lòng chọn học sinh!' }]}
+            >
+              <Select
+                placeholder="Chọn học sinh từ cơ sở dữ liệu"
+                optionLabelProp="label"
+                options={students.map(student => ({
+                  value: student.id,
+                  label: `${student.name} (${student.email})`
+                }))}
+              />
             </Form.Item>
             <Form.Item>
               <Button type="primary" htmlType="submit">Thêm</Button>
@@ -234,9 +261,10 @@ function MemberManager({ teamId, teamName }){
 export default function Teams(){
   const navigate = useNavigate()
   const [teams, setTeams] = useState([])
+  const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
-  const [form] = Form.useForm() 
+  const [form] = Form.useForm()
 
   const fetchTeams = async () => {
     setLoading(true)
@@ -254,12 +282,32 @@ export default function Teams(){
     } finally { setLoading(false) }
   }
 
-  useEffect(()=>{ fetchTeams() }, [])
+  const fetchStudents = async () => {
+    try {
+      const data = await getStudents()
+      if (data && data.error !== 'Unauthorized') {
+        setStudents(data.students || [])
+      }
+    } catch (err) {
+      console.log('Lỗi tải danh sách học sinh')
+    }
+  }
+
+  useEffect(()=>{ fetchTeams(); fetchStudents(); }, [])
 
   const onCreate = async (values) => {
     try {
       message.loading({ content: 'Đang tạo đội...', key: 'createTeamLoading' });
-      const data = await createTeam(values)
+      
+      // Lấy thông tin học sinh được chọn
+      const selectedStudents = students.filter(s => values.studentIds?.includes(s.id));
+      
+      const teamData = {
+        name: values.name,
+        grade: values.grade
+      };
+      
+      const data = await createTeam(teamData)
 
       if (data && data.error === 'Unauthorized') {
         message.error({ content: 'Phiên đăng nhập không hợp lệ. Vui lòng đăng nhập lại.', key: 'createTeamLoading' });
@@ -270,6 +318,17 @@ export default function Teams(){
       if (data && data.error) {
         message.error({ content: data.error, key: 'createTeamLoading' });
         return;
+      }
+
+      // Thêm học sinh vào đội nếu có chọn
+      if (values.studentIds && values.studentIds.length > 0 && data.team) {
+        for (const student of selectedStudents) {
+          await createMember(data.team.id, {
+            name: student.name,
+            studentId: student.email,
+            userId: student.id
+          });
+        }
       }
       
       message.success({ content: 'Tạo đội thành công', key: 'createTeamLoading', duration: 1 });
@@ -336,6 +395,23 @@ export default function Teams(){
           
           <Form.Item name="grade" label="Khối"> 
             <Input placeholder="Ví dụ: 10, 11"/> 
+          </Form.Item>
+
+          <Form.Item 
+            name="studentIds" 
+            label="Chọn học sinh"
+          >
+            <Select
+              mode="multiple"
+              placeholder="Chọn một hoặc nhiều học sinh"
+              optionLabelProp="label"
+            >
+              {students.map(student => (
+                <Select.Option key={student.id} value={student.id}>
+                  <span>{student.name} ({student.email})</span>
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
           
           <Form.Item>

@@ -3,7 +3,8 @@ import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom'
 import { Layout, Menu, Button, Space } from 'antd'
 import LoginPage from './pages/LoginPage'
 import Schedule from './pages/Dashboard' 
-import Teams from './pages/Teams'         
+import Teams from './pages/Teams'
+import Scores from './pages/Scores'         
 import Home from './pages/Home'           
 import DangKi from './pages/dangki.jsx'   
 import { getToken, getUser, removeToken } from './utils/auth'
@@ -33,11 +34,13 @@ export default function MainContent(){
   return (
       <Layout>
         <Header style={{display:'flex', alignItems:'center'}}>
-          <div style={{color:'#fff', fontWeight:700, marginRight:24}}>HSG</div>
+          <Link to="/" style={{textDecoration:'none', display:'flex', alignItems:'center', marginRight:24}}>
+            <div style={{color:'#fff', fontWeight:700}}>HSG</div>
+          </Link>
           <Menu theme="dark" mode="horizontal" selectable={false} style={{flex:1}}>
-            <Menu.Item key="1"><Link to="/">Home</Link></Menu.Item>
             <Menu.Item key="2"><Link to="/dashboard">Xem Lịch</Link></Menu.Item>
             <Menu.Item key="3"><Link to="/teams">Teams</Link></Menu.Item>
+            <Menu.Item key="4"><Link to="/scores">Điểm</Link></Menu.Item>
           </Menu>
           {user ? (
             <div style={{color:'#fff'}}>
@@ -63,6 +66,7 @@ export default function MainContent(){
             <Route path="/dangki" element={<DangKi/>} />
             <Route path="/dashboard" element={<Protected><Schedule/></Protected>} />
             <Route path="/teams" element={<Protected><Teams/></Protected>} />
+            <Route path="/scores" element={<Protected><Scores/></Protected>} />
             <Route path="*" element={<h1 style={{textAlign: 'center', marginTop: 100}}>404 - Trang không tồn tại</h1>} />
           </Routes>
         </Content>

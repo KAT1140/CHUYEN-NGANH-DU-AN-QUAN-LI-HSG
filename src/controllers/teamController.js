@@ -26,10 +26,14 @@ exports.getAll = async (req, res) => {
     let teams;
     if (role === 'admin' || role === 'teacher') {
       // Admin và Teacher xem tất cả đội
-      teams = await Team.findAll();
+      teams = await Team.findAll({
+        include: [{ model: Member, as: 'members' }]
+      });
     } else {
       // User chỉ xem đội mà họ là thành viên - filter trên client hoặc dùng JOIN
-      teams = await Team.findAll();
+      teams = await Team.findAll({
+        include: [{ model: Member, as: 'members' }]
+      });
     }
     
     res.json({ teams });
@@ -50,7 +54,9 @@ exports.create = async (req, res) => {
 
 exports.getById = async (req, res) => {
   try {
-    const team = await Team.findByPk(req.params.id);
+    const team = await Team.findByPk(req.params.id, {
+      include: [{ model: Member, as: 'members' }]
+    });
     if (!team) return res.status(404).json({ error: 'Not found' });
     res.json({ team });
   } catch (err) {

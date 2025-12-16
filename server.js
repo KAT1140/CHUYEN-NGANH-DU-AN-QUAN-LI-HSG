@@ -14,6 +14,19 @@ require('./src/models/User');
 require('./src/models/Team');
 require('./src/models/Member');
 require('./src/models/Schedule');
+require('./src/models/Score');
+
+// Setup associations
+const User = require('./src/models/User');
+const Team = require('./src/models/Team');
+const Member = require('./src/models/Member');
+const Schedule = require('./src/models/Schedule');
+const Score = require('./src/models/Score');
+
+// Set up Score associations
+Score.belongsTo(Member, { foreignKey: 'memberId', as: 'member' });
+Score.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
+Member.hasMany(Score, { foreignKey: 'memberId', as: 'scores' });
 
 // Middlewares
 app.use(express.json());
@@ -70,6 +83,7 @@ async function findViteServer() {
 app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/teams', require('./src/routes/teamRoutes'));
 app.use('/api/schedules', require('./src/routes/scheduleRoutes'));
+app.use('/api/scores', require('./src/routes/scoreRoutes'));
 
 // Serve frontend files:
 // 1) If a production build exists at client/dist, serve it as SPA (recommended for production).

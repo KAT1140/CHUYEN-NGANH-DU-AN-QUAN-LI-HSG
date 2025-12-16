@@ -38,6 +38,11 @@ export async function createTeam(data){
   return res.json();
 }
 
+export async function getStudents(){
+  const res = await fetchAuth(`${API_BASE}/auth/students`);
+  return res.json();
+}
+
 export async function getMembers(teamId){
   const res = await fetchAuth(`${API_BASE}/teams/${teamId}/members`);
   return res.json();
@@ -65,5 +70,41 @@ export async function deleteMember(teamId, memberId){
   const res = await fetchAuth(`${API_BASE}/teams/${teamId}/members/${memberId}`, {
     method: 'DELETE',
   })
+  return res.json();
+}
+
+// Score API functions
+export async function getScores(){
+  const res = await fetchAuth(`${API_BASE}/scores`);
+  return res.json();
+}
+
+export async function getScoresByMember(memberId){
+  const res = await fetchAuth(`${API_BASE}/scores/member/${memberId}`);
+  return res.json();
+}
+
+export async function createScore(data){
+  const res = await fetchAuth(`${API_BASE}/scores`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+export async function updateScore(id, data){
+  const res = await fetchAuth(`${API_BASE}/scores/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+export async function deleteScore(id){
+  const res = await fetchAuth(`${API_BASE}/scores/${id}`, {
+    method: 'DELETE'
+  });
   return res.json();
 }
