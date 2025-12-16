@@ -1,35 +1,37 @@
+// File: client/src/MainContent.jsx
+
 import React, { useEffect, useState } from 'react'
 import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom'
 import { Layout, Menu, Button, Space } from 'antd'
+
+// Import các trang
 import LoginPage from './pages/LoginPage'
-import Schedule from './pages/Dashboard' 
+import Dashboard from './pages/Dashboard' 
 import Teams from './pages/Teams'
 import Scores from './pages/Scores'         
 import Home from './pages/Home'           
-import DangKi from './pages/dangki.jsx'   
+import DangKi from './pages/dangki.jsx'
+import Evaluations from './pages/Evaluations' // <--- MỚI: Import trang Đánh giá
+import Students from './pages/Students'       // <--- MỚI: Import trang Học sinh
+
 import { getToken, getUser, removeToken } from './utils/auth'
 
 const { Header, Content } = Layout
 
-// Component chứa logic cần hook useNavigate
 export default function MainContent(){ 
   const [user, setUser] = useState(getUser())
   const navigate = useNavigate() 
 
-  useEffect(()=>{
-    setUser(getUser())
-  }, [])
+  // Kiểm tra quyền: Chỉ hiện menu "Học sinh" nếu không phải là user thường
+  const canManage = user && user.role !== 'user';
 
-useEffect(() => {
-    // Hàm này sẽ chạy mỗi khi có tín hiệu 'auth-change'
+  // Lắng nghe sự kiện thay đổi đăng nhập/đăng xuất
+  useEffect(() => {
     const handleAuthChange = () => {
-      setUser(getUser()); // Cập nhật lại state user từ localStorage
+      setUser(getUser()); 
     };
 
-    // Đăng ký lắng nghe sự kiện
     window.addEventListener('auth-change', handleAuthChange);
-
-    // Hủy lắng nghe khi thoát
     return () => {
       window.removeEventListener('auth-change', handleAuthChange);
     };
@@ -37,10 +39,10 @@ useEffect(() => {
 
   function logout(){
     removeToken();
-    setUser(null);
-    navigate('/')
+    navigate('/'); // Về trang chủ sau khi đăng xuất
   }
 
+  // Component bảo vệ Route (chưa đăng nhập thì đá về login)
   function Protected({ children }){
     if (!getToken()) return <Navigate to="/login" replace />
     return children
@@ -49,21 +51,31 @@ useEffect(() => {
   return (
       <Layout>
         <Header style={{display:'flex', alignItems:'center'}}>
+          {/* Logo */}
           <Link to="/" style={{textDecoration:'none', display:'flex', alignItems:'center', marginRight:24}}>
-            <div style={{color:'#fff', fontWeight:700}}>HSG</div>
+            <div style={{color:'#fff', fontWeight:700, fontSize: 18}}>HSG Manager</div>
           </Link>
+
+          {/* Menu Chính */}
           <Menu theme="dark" mode="horizontal" selectable={false} style={{flex:1}}>
             <Menu.Item key="2"><Link to="/dashboard">Xem Lịch</Link></Menu.Item>
-            <Menu.Item key="3"><Link to="/teams">Teams</Link></Menu.Item>
-            <Menu.Item key="4"><Link to="/scores">Điểm</Link></Menu.Item>
+            <Menu.Item key="3"><Link to="/teams">Đội Tuyển</Link></Menu.Item>
+            <Menu.Item key="4"><Link to="/scores">Điểm Số</Link></Menu.Item>
+            <Menu.Item key="5"><Link to="/evaluations">Đánh Giá</Link></Menu.Item>
+            
+            {/* Menu Quản lý học sinh - Chỉ hiện với Teacher/Admin */}
+            {canManage && (
+              <Menu.Item key="6"><Link to="/students">Học Sinh</Link></Menu.Item>
+            )}
           </Menu>
+          
+          {/* Khu vực thông tin User bên phải */}
           {user ? (
             <div style={{color:'#fff'}}>
-              <span style={{marginRight:12}}>{user.name}</span>
-              <Button size="small" onClick={logout}>Logout</Button>
+              <span style={{marginRight:12}}>Xin chào, <strong>{user.name}</strong></span>
+              <Button size="small" onClick={logout} danger>Đăng xuất</Button>
             </div>
           ) : (
-            //Link tới Trang Đăng ký
             <Space> 
               <Link to="/dangki">
                 <Button>Đăng Ký</Button> 
@@ -74,35 +86,23 @@ useEffect(() => {
             </Space>
           )}
         </Header>
-        <Content style={{padding:24}}>
+
+        {/* Nội dung trang */}
+        <Content style={{padding:24, minHeight: '80vh'}}>
           <Routes>
             <Route path="/" element={<Home/>} />
             <Route path="/login" element={<LoginPage/>} />
             <Route path="/dangki" element={<DangKi/>} />
-            <Route path="/dashboard" element={<Protected><Schedule/></Protected>} />
+            
+            {/* Các trang cần đăng nhập mới xem được */}
+            <Route path="/dashboard" element={<Protected><Dashboard/></Protected>} />
             <Route path="/teams" element={<Protected><Teams/></Protected>} />
             <Route path="/scores" element={<Protected><Scores/></Protected>} />
-            <Route path="*" element={<h1 style={{textAlign: 'center', marginTop: 100}}>404 - Trang không tồn tại</h1>} />
-          </Routes>
-        </Content>
-      </Layout>
-  )
-  return (
-      <Layout>
-        <Header style={{display:'flex', alignItems:'center'}}>
-          {/* ... Logo ... */}
-          <Menu theme="dark" mode="horizontal" selectable={false} style={{flex:1}}>
-            <Menu.Item key="2"><Link to="/dashboard">Xem Lịch</Link></Menu.Item>
-            <Menu.Item key="3"><Link to="/teams">Teams</Link></Menu.Item>
-            <Menu.Item key="4"><Link to="/scores">Điểm</Link></Menu.Item>
-            <Menu.Item key="5"><Link to="/evaluations">Đánh giá</Link></Menu.Item> {/* <--- Thêm Menu Item */}
-          </Menu>
-          {/* ... User info ... */}
-        </Header>
-        <Content style={{padding:24}}>
-          <Routes>
-            {/* ... Các route cũ ... */}
-            <Route path="/evaluations" element={<Protected><Evaluations/></Protected>} /> {/* <--- Thêm Route */}
+            <Route path="/evaluations" element={<Protected><Evaluations/></Protected>} />
+            
+            {/* Trang quản lý học sinh */}
+            <Route path="/students" element={<Protected><Students/></Protected>} />
+            
             <Route path="*" element={<h1 style={{textAlign: 'center', marginTop: 100}}>404 - Trang không tồn tại</h1>} />
           </Routes>
         </Content>

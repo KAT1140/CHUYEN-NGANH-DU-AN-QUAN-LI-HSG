@@ -1,3 +1,4 @@
+// File: server.js
 const express = require('express');
 const app = express();
 const path = require('path');
@@ -6,73 +7,65 @@ require('dotenv').config();
 
 const PORT = process.env.PORT || 8080;
 
-// Sequelize setup
+// 1. Kết nối Database
 const { sequelize, connectDB } = require('./src/config/database');
 
-// --- 1. LOAD MODELS ---
-require('./src/models/User');
-require('./src/models/Team');
-require('./src/models/Member');
-require('./src/models/Schedule');
-require('./src/models/Score');
-require('./src/models/Evaluation'); // <--- [QUAN TRỌNG] Load model Đánh giá
-
-// --- 2. SETUP ASSOCIATIONS (MỐI QUAN HỆ) ---
+// 2. Load Models (Chỉ load, KHÔNG setup quan hệ ở đây)
 const User = require('./src/models/User');
 const Team = require('./src/models/Team');
 const Member = require('./src/models/Member');
 const Schedule = require('./src/models/Schedule');
 const Score = require('./src/models/Score');
-const Evaluation = require('./src/models/Evaluation'); // <--- [QUAN TRỌNG]
+const Evaluation = require('./src/models/Evaluation');
 
-// Score associations
-Score.belongsTo(Member, { foreignKey: 'memberId', as: 'member' });
-Score.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
-Member.hasMany(Score, { foreignKey: 'memberId', as: 'scores' });
+// 3. Setup Associations (Quan hệ giữa các bảng - CHỈ KHAI BÁO 1 LẦN TẠI ĐÂY)
 
-// Evaluation associations (MỚI)
-Evaluation.belongsTo(Member, { foreignKey: 'memberId', as: 'member' });
-Evaluation.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
-Member.hasMany(Evaluation, { foreignKey: 'memberId', as: 'evaluations' });
-
-// Team & Member associations
+// --- Quan hệ: Team <-> Member ---
+// Một Đội có nhiều Thành viên
 Team.hasMany(Member, { foreignKey: 'teamId', as: 'members' });
+// Một Thành viên thuộc về một Đội
 Member.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
-Member.belongsTo(User, { foreignKey: 'userId', as: 'user' });
-User.hasMany(Member, { foreignKey: 'userId', as: 'teamMembers' });
 
-// Schedule associations
+// --- Quan hệ: User <-> Member ---
+// Một User (Học sinh) có thể là thành viên của nhiều đội
+User.hasMany(Member, { foreignKey: 'userId', as: 'teamMembers' });
+// Một Thành viên trong đội liên kết với 1 tài khoản User
+Member.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// --- Quan hệ: Score (Điểm) ---
+Score.belongsTo(Member, { foreignKey: 'memberId', as: 'member' });
+Member.hasMany(Score, { foreignKey: 'memberId', as: 'scores' });
+Score.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
+
+// --- Quan hệ: Evaluation (Đánh giá) ---
+Evaluation.belongsTo(Member, { foreignKey: 'memberId', as: 'member' });
+Member.hasMany(Evaluation, { foreignKey: 'memberId', as: 'evaluations' });
+Evaluation.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
+
+// --- Quan hệ: Schedule (Lịch) ---
 Schedule.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
 User.hasMany(Schedule, { foreignKey: 'createdBy', as: 'schedules' });
 
-// Middlewares
+// 4. Middlewares
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-
-// --- 3. PROXY & DEV SERVER HELPERS (GIỮ NGUYÊN) ---
+// 5. Proxy Helper & Routes
 const http = require('http');
 const https = require('https');
 const os = require('os');
 
+// Hàm hỗ trợ tìm Vite server (giữ nguyên logic cũ của bạn)
 function probeUrl(url, timeout = 1000) {
   return new Promise((resolve) => {
     try {
       const u = new URL(url);
       const lib = u.protocol === 'https:' ? https : http;
-      const req = lib.request({ method: 'HEAD', hostname: u.hostname, port: u.port, path: u.pathname || '/', timeout }, (res) => {
-        resolve(true);
-        req.destroy();
-      });
+      const req = lib.request({ method: 'HEAD', hostname: u.hostname, port: u.port, path: u.pathname || '/', timeout }, (res) => { resolve(true); req.destroy(); });
       req.on('error', () => resolve(false));
-      req.on('timeout', () => {
-        req.destroy();
-        resolve(false);
-      });
+      req.on('timeout', () => { req.destroy(); resolve(false); });
       req.end();
-    } catch (e) {
-      resolve(false);
-    }
+    } catch (e) { resolve(false); }
   });
 }
 
@@ -83,26 +76,22 @@ async function findViteServer() {
   const nets = os.networkInterfaces();
   for (const name of Object.keys(nets)) {
     for (const nif of nets[name]) {
-      if (nif.family === 'IPv4' && !nif.internal) {
-        candidates.push(`http://${nif.address}:5173`);
-      }
+      if (nif.family === 'IPv4' && !nif.internal) { candidates.push(`http://${nif.address}:5173`); }
     }
   }
-  for (const c of candidates) {
-    if (await probeUrl(c, 1000)) return c;
-  }
+  for (const c of candidates) { if (await probeUrl(c, 1000)) return c; }
   return null;
 }
 
-// --- 4. ROUTES (ĐĂNG KÝ ĐƯỜNG DẪN API) ---
+// --- ĐĂNG KÝ ROUTES ---
 app.use('/api/auth', require('./src/routes/authRoutes'));
 app.use('/api/teams', require('./src/routes/teamRoutes'));
 app.use('/api/schedules', require('./src/routes/scheduleRoutes'));
 app.use('/api/scores', require('./src/routes/scoreRoutes'));
-app.use('/api/evaluations', require('./src/routes/evaluationRoutes')); // <--- [ĐÃ THÊM] Đánh giá
-app.use('/api/students', require('./src/routes/studentRoutes'));       // <--- [ĐÃ THÊM] Quản lý sinh viên
+app.use('/api/evaluations', require('./src/routes/evaluationRoutes'));
+app.use('/api/students', require('./src/routes/studentRoutes'));
 
-// --- 5. SERVE FRONTEND ---
+// Serve frontend
 const clientDist = path.join(__dirname, 'client', 'dist');
 const clientIndex = path.join(__dirname, 'client', 'index.html');
 if (fs.existsSync(clientDist)) {
@@ -112,37 +101,26 @@ if (fs.existsSync(clientDist)) {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 } else if (fs.existsSync(clientIndex)) {
-  app.get('/', (req, res) => {
-    res.sendFile(clientIndex);
-  });
+  app.get('/', (req, res) => { res.sendFile(clientIndex); });
 } else {
   app.get('/', (req, res) => res.send('HSG backend — API available at /api/*'));
 }
 
+// Start Server
 const start = async () => {
   try {
     await connectDB();
-    await sequelize.sync({ alter: true }); // Cập nhật bảng DB
+    await sequelize.sync({ alter: true });
 
-    // Setup Vite Proxy for Development
     if (process.env.NODE_ENV !== 'production') {
       try {
         const { createProxyMiddleware } = require('http-proxy-middleware');
         const viteTarget = (await findViteServer()) || process.env.VITE_DEV_SERVER || 'http://localhost:5173';
         if (viteTarget) {
-          app.use(['/src', '/@vite', '/@fs', '/node_modules'], createProxyMiddleware({
-            target: viteTarget,
-            changeOrigin: true,
-            ws: true,
-            logLevel: 'warn'
-          }));
+          app.use(['/src', '/@vite', '/@fs', '/node_modules'], createProxyMiddleware({ target: viteTarget, changeOrigin: true, ws: true, logLevel: 'warn' }));
           console.log('Vite proxy configured to', viteTarget);
-        } else {
-          console.warn('No Vite dev server found; proxy not configured');
         }
-      } catch (err) {
-        console.warn('http-proxy-middleware not available; skipping Vite proxy (dev only)');
-      }
+      } catch (err) { console.warn('Skipping Vite proxy'); }
     }
 
     app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
