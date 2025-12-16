@@ -20,6 +20,21 @@ export default function MainContent(){
     setUser(getUser())
   }, [])
 
+useEffect(() => {
+    // Hàm này sẽ chạy mỗi khi có tín hiệu 'auth-change'
+    const handleAuthChange = () => {
+      setUser(getUser()); // Cập nhật lại state user từ localStorage
+    };
+
+    // Đăng ký lắng nghe sự kiện
+    window.addEventListener('auth-change', handleAuthChange);
+
+    // Hủy lắng nghe khi thoát
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange);
+    };
+  }, []);
+
   function logout(){
     removeToken();
     setUser(null);

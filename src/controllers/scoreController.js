@@ -1,11 +1,39 @@
+// File: src/controllers/scoreController.js
+
 const Score = require('../models/Score');
 const Member = require('../models/Member');
 const User = require('../models/User');
+const { Op } = require('sequelize'); // Import Op để dùng toán tử tìm kiếm
 
-// Get all scores with member and teacher info
+// Get scores (Phân quyền: User chỉ xem của mình, Admin/Teacher xem hết)
 exports.getAll = async (req, res) => {
   try {
+    const { id, role } = req.user; // Lấy ID và Role từ token đăng nhập
+    let whereClause = {};
+
+    // LOGIC PHÂN QUYỀN TẠI ĐÂY
+    if (role === 'user') {
+      // 1. Tìm tất cả các "hồ sơ thành viên" của user này (vì 1 user có thể tham gia nhiều đội)
+      const members = await Member.findAll({ 
+        where: { userId: id },
+        attributes: ['id'] 
+      });
+      
+      // Lấy danh sách ID thành viên
+      const memberIds = members.map(m => m.id);
+
+      // Nếu không tham gia đội nào -> Không có điểm
+      if (memberIds.length === 0) {
+        return res.json({ scores: [] });
+      }
+
+      // 2. Chỉ lấy điểm thuộc về các memberId này
+      whereClause = { memberId: memberIds };
+    }
+    // Nếu là admin/teacher thì whereClause rỗng -> Lấy tất cả
+
     const scores = await Score.findAll({
+      where: whereClause,
       include: [
         { model: Member, as: 'member' },
         { model: User, as: 'teacher', attributes: ['id', 'name', 'email'] }
@@ -19,7 +47,7 @@ exports.getAll = async (req, res) => {
   }
 };
 
-// Get scores by member
+// Get scores by member (Giữ nguyên, nhưng thêm kiểm tra bảo mật nếu kỹ hơn)
 exports.getByMember = async (req, res) => {
   try {
     const { memberId } = req.params;
@@ -37,7 +65,7 @@ exports.getByMember = async (req, res) => {
   }
 };
 
-// Create score (teacher/admin only)
+// Create score (teacher/admin only) - Giữ nguyên
 exports.create = async (req, res) => {
   try {
     const { memberId, testName, score, maxScore, examDate, notes } = req.body;
@@ -47,7 +75,7 @@ exports.create = async (req, res) => {
     }
 
     const newScore = await Score.create({
-      id,
+      memberId,
       testName,
       score,
       maxScore: maxScore || 10,
@@ -70,7 +98,7 @@ exports.create = async (req, res) => {
   }
 };
 
-// Update score (teacher/admin only, or creator)
+// Update score (teacher/admin only, or creator) - Giữ nguyên
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
@@ -81,7 +109,6 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: 'Score not found' });
     }
 
-    // Check permission: only creator, admin, or teacher can update
     if (req.user.role === 'user' || (req.user.role === 'teacher' && req.user.id !== scoreRecord.createdBy && req.user.role !== 'admin')) {
       return res.status(403).json({ error: 'Permission denied' });
     }
@@ -108,7 +135,7 @@ exports.update = async (req, res) => {
   }
 };
 
-// Delete score (teacher/admin only, or creator)
+// Delete score (teacher/admin only, or creator) - Giữ nguyên
 exports.delete = async (req, res) => {
   try {
     const { id } = req.params;
@@ -118,7 +145,6 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: 'Score not found' });
     }
 
-    // Check permission: only creator, admin, or teacher can delete
     if (req.user.role === 'user' || (req.user.role === 'teacher' && req.user.id !== scoreRecord.createdBy && req.user.role !== 'admin')) {
       return res.status(403).json({ error: 'Permission denied' });
     }
