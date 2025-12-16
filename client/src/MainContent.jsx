@@ -87,4 +87,25 @@ useEffect(() => {
         </Content>
       </Layout>
   )
+  return (
+      <Layout>
+        <Header style={{display:'flex', alignItems:'center'}}>
+          {/* ... Logo ... */}
+          <Menu theme="dark" mode="horizontal" selectable={false} style={{flex:1}}>
+            <Menu.Item key="2"><Link to="/dashboard">Xem Lịch</Link></Menu.Item>
+            <Menu.Item key="3"><Link to="/teams">Teams</Link></Menu.Item>
+            <Menu.Item key="4"><Link to="/scores">Điểm</Link></Menu.Item>
+            <Menu.Item key="5"><Link to="/evaluations">Đánh giá</Link></Menu.Item> {/* <--- Thêm Menu Item */}
+          </Menu>
+          {/* ... User info ... */}
+        </Header>
+        <Content style={{padding:24}}>
+          <Routes>
+            {/* ... Các route cũ ... */}
+            <Route path="/evaluations" element={<Protected><Evaluations/></Protected>} /> {/* <--- Thêm Route */}
+            <Route path="*" element={<h1 style={{textAlign: 'center', marginTop: 100}}>404 - Trang không tồn tại</h1>} />
+          </Routes>
+        </Content>
+      </Layout>
+  )
 }

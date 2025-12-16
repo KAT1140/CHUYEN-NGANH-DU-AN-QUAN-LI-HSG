@@ -108,3 +108,25 @@ export async function deleteScore(id){
   });
   return res.json();
 }
+
+// Evaluation API functions
+export async function getEvaluations(){
+  const res = await fetchAuth(`${API_BASE}/evaluations`);
+  return res.json();
+}
+
+export async function createEvaluation(data){
+  const res = await fetchAuth(`${API_BASE}/evaluations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
+export async function deleteEvaluation(id){
+  const res = await fetchAuth(`${API_BASE}/evaluations/${id}`, {
+    method: 'DELETE'
+  });
+  return res.json();
+}
