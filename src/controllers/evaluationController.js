@@ -1,6 +1,6 @@
 // File: src/controllers/evaluationController.js
 const Evaluation = require('../models/Evaluation');
-const Member = require('../models/Member');
+const Student = require('../models/Student');
 const User = require('../models/User');
 const { Op } = require('sequelize');
 
@@ -12,7 +12,7 @@ exports.getAll = async (req, res) => {
 
     // Nếu là học sinh, chỉ xem đánh giá của chính mình
     if (role === 'user') {
-      const members = await Member.findAll({ where: { userId: id }, attributes: ['id'] });
+      const members = await Student.findAll({ where: { userId: id }, attributes: ['id'] });
       const memberIds = members.map(m => m.id);
       
       if (memberIds.length === 0) return res.json({ evaluations: [] });
@@ -22,7 +22,7 @@ exports.getAll = async (req, res) => {
     const evaluations = await Evaluation.findAll({
       where: whereClause,
       include: [
-        { model: Member, as: 'member' },
+        { model: Student, as: 'member' },
         { model: User, as: 'teacher', attributes: ['id', 'name'] }
       ],
       order: [['date', 'DESC']]

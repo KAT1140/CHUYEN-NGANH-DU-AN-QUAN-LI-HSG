@@ -1,6 +1,6 @@
 // File: src/controllers/studentController.js
 const User = require('../models/User');
-const Member = require('../models/Member');
+const Student = require('../models/Student');
 const bcrypt = require('bcryptjs');
 const { Op } = require('sequelize');
 
@@ -70,8 +70,8 @@ exports.update = async (req, res) => {
 
     await student.update(updateData);
     
-    // Cập nhật thông tin bên bảng Member nếu có liên kết (để đồng bộ tên/mã)
-    await Member.update(
+    // Cập nhật thông tin bên bảng Student nếu có liên kết (để đồng bộ tên/mã)
+    await Student.update(
       { name: name, studentId: email }, 
       { where: { userId: id } }
     );
@@ -90,8 +90,8 @@ exports.delete = async (req, res) => {
     if (!student) return res.status(404).json({ error: 'Không tìm thấy học sinh' });
 
     // Xóa (hoặc set null) các dữ liệu liên quan
-    // 1. Xóa Member liên kết (Học sinh sẽ bị xóa khỏi các đội)
-    await Member.destroy({ where: { userId: id } });
+    // 1. Xóa Student liên kết (Học sinh sẽ bị xóa khỏi các đội)
+    await Student.destroy({ where: { userId: id } });
     
     // 2. Xóa User
     await student.destroy();
@@ -104,8 +104,8 @@ exports.delete = async (req, res) => {
 // [MỚI] Lấy danh sách học sinh CHƯA tham gia đội nào
 exports.getAvailable = async (req, res) => {
   try {
-    // 1. Lấy danh sách ID của những user đã nằm trong bảng Member
-    const occupiedMembers = await Member.findAll({
+    // 1. Lấy danh sách ID của những user đã nằm trong bảng Student
+    const occupiedMembers = await Student.findAll({
       attributes: ['userId'],
       where: { userId: { [Op.ne]: null } } // Chỉ lấy dòng có userId hợp lệ
     });

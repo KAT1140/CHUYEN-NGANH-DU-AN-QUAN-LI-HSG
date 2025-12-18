@@ -38,6 +38,13 @@ export async function createTeam(data){
   return res.json();
 }
 
+export async function deleteTeam(teamId){
+  const res = await fetchAuth(`${API_BASE}/teams/${teamId}`, {
+    method: 'DELETE'
+  });
+  return res.json();
+}
+
 export async function getStudents(){
   const res = await fetchAuth(`${API_BASE}/auth/students`);
   return res.json();

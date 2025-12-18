@@ -5,6 +5,7 @@ const Student = sequelize.define('Student', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, allowNull: false },
   studentId: { type: DataTypes.STRING, unique: true, allowNull: false }, // Mã số học sinh
+  grade: { type: DataTypes.STRING }, // Khối (10, 11, 12)
   contact: { type: DataTypes.STRING }, // Thông tin liên hệ
   teamId: { // Khóa ngoại liên kết với Team
     type: DataTypes.INTEGER,

@@ -13,33 +13,34 @@ const { sequelize, connectDB } = require('./src/config/database');
 // 2. Load Models (Chỉ load, KHÔNG setup quan hệ ở đây)
 const User = require('./src/models/User');
 const Team = require('./src/models/Team');
-const Member = require('./src/models/Member');
+const Student = require('./src/models/Student');
 const Schedule = require('./src/models/Schedule');
 const Score = require('./src/models/Score');
 const Evaluation = require('./src/models/Evaluation');
+const Teacher = require('./src/models/Teacher');
 
 // 3. Setup Associations (Quan hệ giữa các bảng - CHỈ KHAI BÁO 1 LẦN TẠI ĐÂY)
 
-// --- Quan hệ: Team <-> Member ---
+// --- Quan hệ: Team <-> Student ---
 // Xóa Đội -> Xóa hết Thành viên trong đội
-Team.hasMany(Member, { foreignKey: 'teamId', as: 'members', onDelete: 'CASCADE' });
-Member.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
+Team.hasMany(Student, { foreignKey: 'teamId', as: 'members', onDelete: 'CASCADE' });
+Student.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
 
-// --- Quan hệ: User <-> Member ---
+// --- Quan hệ: User <-> Student ---
 // Xóa Tài khoản Học sinh -> Xóa hết thông tin thành viên của họ
-User.hasMany(Member, { foreignKey: 'userId', as: 'teamMembers' });
-Member.belongsTo(User, { foreignKey: 'userId', as: 'user', onDelete: 'CASCADE' });
+User.hasMany(Student, { foreignKey: 'userId', as: 'teamMembers' });
+Student.belongsTo(User, { foreignKey: 'userId', as: 'user', onDelete: 'CASCADE' });
 
 // --- Quan hệ: Score (Điểm) ---
 // Xóa Thành viên -> Xóa hết Điểm của họ
-Score.belongsTo(Member, { foreignKey: 'memberId', as: 'member', onDelete: 'CASCADE' });
-Member.hasMany(Score, { foreignKey: 'memberId', as: 'scores' });
+Score.belongsTo(Student, { foreignKey: 'memberId', as: 'member', onDelete: 'CASCADE' });
+Student.hasMany(Score, { foreignKey: 'memberId', as: 'scores' });
 Score.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
 
 // --- Quan hệ: Evaluation (Đánh giá) ---
 // Xóa Thành viên -> Xóa hết Đánh giá của họ
-Evaluation.belongsTo(Member, { foreignKey: 'memberId', as: 'member', onDelete: 'CASCADE' });
-Member.hasMany(Evaluation, { foreignKey: 'memberId', as: 'evaluations' });
+Evaluation.belongsTo(Student, { foreignKey: 'memberId', as: 'member', onDelete: 'CASCADE' });
+Student.hasMany(Evaluation, { foreignKey: 'memberId', as: 'evaluations' });
 Evaluation.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
 
 // --- Quan hệ: Schedule (Lịch) ---

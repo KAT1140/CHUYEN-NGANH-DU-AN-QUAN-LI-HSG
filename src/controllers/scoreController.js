@@ -1,7 +1,7 @@
 // File: src/controllers/scoreController.js
 
 const Score = require('../models/Score');
-const Member = require('../models/Member');
+const Student = require('../models/Student');
 const User = require('../models/User');
 const { Op } = require('sequelize'); // Import Op để dùng toán tử tìm kiếm
 
@@ -14,7 +14,7 @@ exports.getAll = async (req, res) => {
     // LOGIC PHÂN QUYỀN TẠI ĐÂY
     if (role === 'user') {
       // 1. Tìm tất cả các "hồ sơ thành viên" của user này (vì 1 user có thể tham gia nhiều đội)
-      const members = await Member.findAll({ 
+      const members = await Student.findAll({ 
         where: { userId: id },
         attributes: ['id'] 
       });
@@ -35,7 +35,7 @@ exports.getAll = async (req, res) => {
     const scores = await Score.findAll({
       where: whereClause,
       include: [
-        { model: Member, as: 'member' },
+        { model: Student, as: 'member' },
         { model: User, as: 'teacher', attributes: ['id', 'name', 'email'] }
       ],
       order: [['createdAt', 'DESC']]

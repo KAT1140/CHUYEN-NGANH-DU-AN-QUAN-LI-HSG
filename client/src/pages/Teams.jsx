@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom'
 import { Table, Button, Modal, Form, Input, Space, message, Collapse, Card, Tag, Typography, Select } from 'antd'
 // Import các hàm API
 import { 
-  getTeams, createTeam, getMembers, createMember, updateMember, deleteMember, 
+  getTeams, createTeam, deleteTeam, getMembers, createMember, updateMember, deleteMember, 
   getStudents, 
-  getAvailableStudents // <--- [QUAN TRỌNG] Import hàm lấy danh sách lọc
+  getAvailableStudents
 } from '../utils/api' 
 
 import { TeamOutlined, ReloadOutlined, UserAddOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
@@ -160,6 +160,7 @@ function MemberManager({ teamId, teamName }){
   const memberColumns = [
     { title: 'Tên thành viên', dataIndex: 'name', key: 'name' },
     { title: 'Mã số HS', dataIndex: 'studentId', key: 'studentId' },
+    { title: 'Khối', dataIndex: 'grade', key: 'grade', render: (grade) => grade ? `Khối ${grade}` : '-' },
     { title: 'Liên hệ', dataIndex: 'contact', key: 'contact' },
     {
         title: 'Thao tác',
@@ -272,6 +273,9 @@ function MemberManager({ teamId, teamName }){
           <Form.Item name="studentId" label="Mã số học sinh" rules={[{ required: true, message: 'Vui lòng nhập mã số!' }]}> 
             <Input/> 
           </Form.Item>
+          <Form.Item name="grade" label="Khối"> 
+            <Input placeholder="Ví dụ: 10, 11, 12"/> 
+          </Form.Item>
           <Form.Item name="contact" label="Liên hệ"> 
             <Input/> 
           </Form.Item>
@@ -378,6 +382,33 @@ export default function Teams(){
     form.resetFields(); 
   };
   
+  const handleDeleteTeam = (teamId, teamName) => {
+    Modal.confirm({
+      title: 'Xóa đội tuyển',
+      content: `Bạn chắc chắn muốn xóa đội "${teamName}"? Hành động này không thể hoàn tác!`,
+      okText: 'Xóa',
+      okType: 'danger',
+      cancelText: 'Hủy',
+      onOk: async () => {
+        try {
+          message.loading({ content: 'Đang xóa đội...', key: 'deleteTeam' });
+          const data = await deleteTeam(teamId);
+          
+          if (data.error) {
+            message.error({ content: data.error, key: 'deleteTeam' });
+            return;
+          }
+          
+          message.success({ content: 'Xóa đội thành công!', key: 'deleteTeam', duration: 2 });
+          fetchTeams();
+        } catch (err) {
+          message.error({ content: 'Lỗi khi xóa đội', key: 'deleteTeam' });
+        }
+      }
+    });
+  };
+  
+  
   const teamItems = teams.map((team) => ({
     key: team.id.toString(),
     label: (
@@ -388,6 +419,19 @@ export default function Teams(){
         <span style={{fontSize: 12, color: '#888'}}>({team.members ? team.members.length : 0} thành viên)</span>
       </Space>
     ),
+    extra: (canCreateTeam) ? (
+      <Button 
+        danger 
+        size="small" 
+        icon={<DeleteOutlined />} 
+        onClick={(e) => {
+          e.stopPropagation();
+          handleDeleteTeam(team.id, team.name);
+        }}
+      >
+        Xóa đội
+      </Button>
+    ) : null,
     children: <MemberManager teamId={team.id} teamName={team.name} />,
   }));
 

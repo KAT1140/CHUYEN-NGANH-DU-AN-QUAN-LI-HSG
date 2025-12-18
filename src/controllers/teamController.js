@@ -1,5 +1,5 @@
 const Team = require('../models/Team');
-const Member = require('../models/Member');
+const Student = require('../models/Student');
 const User = require('../models/User'); 
 const bcrypt = require('bcryptjs'); 
 const saltRounds = 10; 
@@ -25,7 +25,7 @@ exports.getAll = async (req, res) => {
     if (role === 'admin') {
       // Admin xem tất cả
       teams = await Team.findAll({
-        include: [{ model: Member, as: 'members' }]
+        include: [{ model: Student, as: 'members' }]
       });
     } else if (role === 'teacher') {
       // Teacher: Chỉ xem đội có cùng môn với mình
@@ -40,11 +40,11 @@ exports.getAll = async (req, res) => {
 
       teams = await Team.findAll({
         where: whereCondition,
-        include: [{ model: Member, as: 'members' }]
+        include: [{ model: Student, as: 'members' }]
       });
     } else {
       // User thường: Chỉ xem đội mình tham gia
-      const memberships = await Member.findAll({
+      const memberships = await Student.findAll({
         where: { userId: id },
         attributes: ['teamId']
       });
@@ -57,7 +57,7 @@ exports.getAll = async (req, res) => {
 
       teams = await Team.findAll({
         where: { id: { [Op.in]: teamIds } },
-        include: [{ model: Member, as: 'members' }]
+        include: [{ model: Student, as: 'members' }]
       });
     }
     
@@ -91,7 +91,7 @@ exports.create = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const team = await Team.findByPk(req.params.id, {
-      include: [{ model: Member, as: 'members' }]
+      include: [{ model: Student, as: 'members' }]
     });
     if (!team) return res.status(404).json({ error: 'Not found' });
     
@@ -127,7 +127,7 @@ exports.getMembersByTeam = async (req, res) => {
         }
     }
 
-    const members = await Member.findAll({ 
+    const members = await Student.findAll({ 
       where: { teamId }, 
       attributes: { exclude: ['teamId'] } 
     }); 
@@ -181,14 +181,14 @@ exports.createMember = async (req, res) => {
     }
     
     // Kiểm tra đã có trong đội chưa
-    const existingMember = await Member.findOne({
+    const existingMember = await Student.findOne({
         where: { teamId, userId: targetUserId }
     });
     if (existingMember) {
         return res.status(400).json({ error: 'Thành viên này đã có trong đội.' });
     }
 
-    const member = await Member.create({ teamId, name, studentId, contact, userId: targetUserId }); 
+    const member = await Student.create({ teamId, name, studentId, contact, userId: targetUserId }); 
 
     res.status(201).json({ 
         member, 
@@ -205,7 +205,7 @@ exports.updateMember = async (req, res) => {
     const memberId = req.params.memberId;
     const { name, studentId, contact } = req.body; 
     
-    const member = await Member.findByPk(memberId);
+    const member = await Student.findByPk(memberId);
     if (!member) return res.status(404).json({ error: 'Thành viên không tồn tại' });
 
     // Check quyền
@@ -244,7 +244,7 @@ exports.updateMember = async (req, res) => {
 exports.deleteMember = async (req, res) => {
   try {
     const memberId = req.params.memberId;
-    const member = await Member.findByPk(memberId);
+    const member = await Student.findByPk(memberId);
     if (!member) return res.status(404).json({ error: 'Thành viên không tồn tại' });
 
     // Check quyền
@@ -259,6 +259,32 @@ exports.deleteMember = async (req, res) => {
     res.json({ message: 'Đã xóa thành viên khỏi đội.' });
   } catch (err) {
     handleSequelizeError(err, res);
+  }
+};
+
+// --- 8. XÓA ĐỘI (CHỈ ADMIN VÀ TEACHER CÓ QUYỀN) ---
+exports.deleteTeam = async (req, res) => {
+  try {
+    const teamId = req.params.id;
+    const team = await Team.findByPk(teamId);
+    if (!team) return res.status(404).json({ error: 'Đội không tồn tại' });
+
+    // Check quyền: Chỉ Admin hoặc Teacher cùng môn mới được xóa
+    if (req.user.role === 'user') {
+      return res.status(403).json({ error: 'Bạn không có quyền xóa đội' });
+    }
+
+    if (req.user.role === 'teacher') {
+      if (!req.user.subject || team.subject !== req.user.subject) {
+        return res.status(403).json({ error: 'Bạn chỉ có quyền xóa đội cùng môn' });
+      }
+    }
+
+    await team.destroy();
+    res.json({ message: 'Đã xóa đội thành công' });
+  } catch (err) {
+    console.error('Error deleting team:', err);
+    res.status(500).json({ error: err.message });
   }
 };
 

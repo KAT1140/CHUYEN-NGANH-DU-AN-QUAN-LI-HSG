@@ -12,9 +12,7 @@ const { requireAdmin, requireUser, requireTeacher } = require('../middleware/adm
 router.get('/', auth, controller.getAll); 
 router.post('/', auth, requireTeacher, controller.create); 
 router.get('/:id', auth, controller.getById); 
-// Thêm routes Update/Delete Team
-// router.put('/:id', auth, requireAdmin, controller.update); 
-// router.delete('/:id', auth, requireAdmin, controller.delete); 
+router.delete('/:id', auth, controller.deleteTeam); // Xóa đội (Admin + Teacher) 
 
 // QUẢN LÝ THÀNH VIÊN (CRUD - Yêu cầu user đã đăng nhập)
 router.get('/:teamId/members', auth, requireUser, controller.getMembersByTeam); 
