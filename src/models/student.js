@@ -1,7 +1,7 @@
 const { DataTypes } = require('sequelize');
 const { sequelize } = require('../config/database');
 
-const Member = sequelize.define('Member', {
+const Student = sequelize.define('Student', {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   name: { type: DataTypes.STRING, allowNull: false },
   studentId: { type: DataTypes.STRING, unique: true, allowNull: false }, // Mã số học sinh
@@ -14,7 +14,7 @@ const Member = sequelize.define('Member', {
     },
     allowNull: false
   },
-  userId: { // Khóa ngoại liên kết với User (nếu member cũng là user trong hệ thống)
+  userId: { // Khóa ngoại liên kết với User (nếu student cũng là user trong hệ thống)
     type: DataTypes.INTEGER,
     references: {
       model: 'Users',
@@ -22,6 +22,8 @@ const Member = sequelize.define('Member', {
     },
     allowNull: true
   }
+}, {
+  tableName: 'students' // Đặt tên bảng là 'students'
 });
 
-module.exports = Member;
+module.exports = Student;

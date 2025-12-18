@@ -7,7 +7,7 @@ const Score = sequelize.define('Score', {
     type: DataTypes.INTEGER, 
     allowNull: false,
     references: {
-      model: 'Members',
+      model: 'student',
       key: 'id'
     }
   },
