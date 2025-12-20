@@ -13,7 +13,7 @@ const Student = sequelize.define('Student', {
       model: 'Teams',
       key: 'id'
     },
-    allowNull: false
+    allowNull: true // Cho phép null - học sinh chưa có team
   },
   userId: { // Khóa ngoại liên kết với User (nếu student cũng là user trong hệ thống)
     type: DataTypes.INTEGER,

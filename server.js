@@ -90,6 +90,8 @@ app.use('/api/schedules', require('./src/routes/scheduleRoutes'));
 app.use('/api/scores', require('./src/routes/scoreRoutes'));
 app.use('/api/evaluations', require('./src/routes/evaluationRoutes'));
 app.use('/api/students', require('./src/routes/studentRoutes'));
+app.use('/api/teachers', require('./src/routes/teacherRoutes'));
+app.use('/api/statistics', require('./src/routes/statisticsRoutes'));
 
 // Serve frontend
 const clientDist = path.join(__dirname, 'client', 'dist');
@@ -110,7 +112,7 @@ if (fs.existsSync(clientDist)) {
 const start = async () => {
   try {
     await connectDB();
-    await sequelize.sync({ alter: true }); // Tự động cập nhật bảng
+    // await sequelize.sync({ alter: true }); // Disabled - database already setup
 
     if (process.env.NODE_ENV !== 'production') {
       try {

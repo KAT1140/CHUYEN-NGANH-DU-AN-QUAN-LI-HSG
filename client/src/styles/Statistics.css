@@ -1,0 +1,63 @@
+/* Statistics.css */
+.statistics-actions {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.statistics-year-select {
+  width: 150px;
+}
+
+.statistics-loading {
+  text-align: center;
+  padding: 50px;
+}
+
+.statistics-cards-row {
+  margin-bottom: 16px;
+}
+
+.statistics-avg-score-good {
+  color: #3f8600;
+}
+
+.statistics-avg-score-normal {
+  color: #1890ff;
+}
+
+.statistics-tables-row {
+  margin-bottom: 16px;
+}
+
+.statistics-empty {
+  text-align: center;
+  padding: 50px;
+  color: #999;
+}
+
+.statistics-score-good {
+  font-weight: bold;
+  color: #52c41a;
+}
+
+.statistics-score-medium {
+  font-weight: bold;
+  color: #1890ff;
+}
+
+.statistics-score-bad {
+  font-weight: bold;
+  color: #ff4d4f;
+}
+
+.statistics-score-bold {
+  font-weight: bold;
+}
+
+.statistics-top-score {
+  font-size: 16px;
+  font-weight: bold;
+  color: #52c41a;
+}

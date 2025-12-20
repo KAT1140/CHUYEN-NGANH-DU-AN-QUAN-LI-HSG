@@ -1,0 +1,16 @@
+/* Scores.css */
+.scores-actions {
+  margin-bottom: 16px;
+}
+
+.scores-year-select {
+  width: 150px;
+}
+
+.scores-datepicker {
+  width: 100%;
+}
+
+.scores-form-button {
+  width: 100%;
+}

@@ -9,6 +9,7 @@ const Schedule = sequelize.define('Schedule', {
   date: { type: DataTypes.DATEONLY, allowNull: false },
   time: { type: DataTypes.TIME },
   type: { type: DataTypes.STRING, defaultValue: 'event' }, // 'event' hoặc 'meeting'
+  subject: { type: DataTypes.STRING }, // Môn học
   createdBy: { 
     type: DataTypes.INTEGER,
     references: {

@@ -1,14 +1,30 @@
-// File: client/src/pages/Dashboard.jsx
+// File: client/src/pages/Schedule.jsx
 
 import React, { useState, useEffect } from 'react'
 import { Layout, Calendar, Card, Tag, Space, Button, Modal, Form, Input, Select, DatePicker, message } from 'antd'
-import { PlusOutlined, DeleteOutlined, ReloadOutlined, EditOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, ReloadOutlined, EditOutlined, ClockCircleOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useNavigate } from 'react-router-dom'
+import '../styles/Dashboard.css'
 
 const { Header, Content } = Layout
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
+
+// Màu sắc cho môn học
+const getSubjectColor = (subject) => {
+  const colors = {
+    'Toán': '#1890ff',
+    'Lý': '#52c41a',
+    'Hóa': '#fa8c16',
+    'Sinh': '#13c2c2',
+    'Văn': '#eb2f96',
+    'Anh': '#722ed1',
+    'Địa': '#faad14',
+    'Lịch sử': '#f5222d'
+  };
+  return colors[subject] || '#1890ff';
+};
 
 // Hàm helper fetch có xác thực
 async function fetchAuth(url, options = {}) {
@@ -34,6 +50,7 @@ export default function Schedule(){
   const [selectedDate, setSelectedDate] = useState(dayjs());
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [teacherSubject, setTeacherSubject] = useState(null);
   
   // --- THÊM STATE QUẢN LÝ SỬA ---
   const [isEditMode, setIsEditMode] = useState(false);
@@ -67,7 +84,25 @@ export default function Schedule(){
 
   useEffect(() => {
     fetchSchedules();
+    fetchTeacherSubject();
   }, []);
+
+  // Lấy môn của giáo viên nếu user là teacher
+  const fetchTeacherSubject = async () => {
+    if (userRole === 'teacher') {
+      try {
+        const res = await fetchAuth(`${API_BASE}/auth/me`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.teacher && data.teacher.subject) {
+            setTeacherSubject(data.teacher.subject);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching teacher subject:', err);
+      }
+    }
+  };
 
   const getSchedulesForDate = (date) => {
     return schedules.filter(schedule => 
@@ -82,7 +117,15 @@ export default function Schedule(){
     setIsEditMode(false);
     setEditingId(null);
     form.resetFields();
-    form.setFieldsValue({ date: selectedDate, type: 'event' });
+    const initialValues = { 
+      date: selectedDate, 
+      type: 'event'
+    };
+    // Nếu là giáo viên, tự động điền môn
+    if (teacherSubject) {
+      initialValues.subject = teacherSubject;
+    }
+    form.setFieldsValue(initialValues);
     setIsModalVisible(true);
   };
 
@@ -95,7 +138,7 @@ export default function Schedule(){
       description: schedule.description,
       date: dayjs(schedule.date),
       time: schedule.time ? dayjs(schedule.time, 'HH:mm:ss') : null,
-      type: schedule.type
+      subject: schedule.subject
     });
     setIsModalVisible(true);
   };
@@ -115,7 +158,8 @@ export default function Schedule(){
         description: values.description,
         date: values.date.format('YYYY-MM-DD'),
         time: values.time ? values.time.format('HH:mm:ss') : '09:00:00',
-        type: values.type || 'event'
+        type: 'event',
+        subject: values.subject
       };
 
       const res = await fetchAuth(url, {
@@ -183,27 +227,59 @@ export default function Schedule(){
   }
 
   const dateCellRender = (value) => {
-    const listData = getListData(value)
+    const dateSchedules = getSchedulesForDate(value);
     return (
-      <ul style={{ listStyle: 'none', padding: 0 }}>
-        {listData.map((item) => (
-          <li key={item.content}>
-            <Tag color={item.type === 'success' ? 'blue' : 'orange'}>{item.content}</Tag>
+      <ul style={{ listStyle: 'none', padding: '2px', margin: 0 }}>
+        {dateSchedules.slice(0, 2).map((schedule) => {
+          // Rút gọn title: "Toán - Ôn tập chương" -> "Ôn tập chương"
+          const shortTitle = schedule.title ? schedule.title.split(' - ').pop() : '';
+          return (
+            <li key={schedule.id} style={{marginBottom: 4}}>
+              <div style={{
+                background: schedule.subject ? getSubjectColor(schedule.subject) : '#1890ff',
+                color: '#fff',
+                padding: '2px 6px',
+                borderRadius: 4,
+                fontSize: 10,
+                fontWeight: 500,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}>
+                <span style={{fontWeight: 600}}>{schedule.time ? schedule.time.slice(0, 5) : ''}</span>
+                <span style={{opacity: 0.9}}>{shortTitle}</span>
+              </div>
+            </li>
+          );
+        })}
+        {dateSchedules.length > 2 && (
+          <li style={{
+            fontSize: 10, 
+            color: '#999', 
+            textAlign: 'center',
+            padding: '2px',
+            background: '#f0f0f0',
+            borderRadius: 3
+          }}>
+            +{dateSchedules.length - 2} lịch
           </li>
-        ))}
+        )}
       </ul>
     )
   }
 
   return (
-    <Layout style={{minHeight:'100vh'}}>
-      <Header>
-        <div style={{color:'#fff',fontWeight:700}}>HSG Management - Lịch Biểu</div>
+    <Layout className="dashboard-layout">
+      <Header style={{background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(10px)'}}>
+        <div className="dashboard-logo">HSG Management - Lịch Biểu</div>
       </Header>
-      <Content style={{padding:24}}>
-        <div style={{display:'grid', gridTemplateColumns:'2fr 1fr', gap:24}}>
+      <Content className="dashboard-content">
+        <div className="dashboard-grid">
           {/* Calendar */}
-          <Card>
+          <Card className="dashboard-calendar-card">
             <Calendar 
               value={selectedDate}
               onChange={handleDateSelect}
@@ -214,7 +290,13 @@ export default function Schedule(){
           {/* Sidebar: Events for selected date */}
           <div>
             <Card 
-              title={`Sự kiện ngày ${selectedDate.format('DD/MM/YYYY')}`}
+              className="dashboard-sidebar-card"
+              title={
+                <span>
+                  <ClockCircleOutlined style={{marginRight: 8}} />
+                  Lịch ngày {selectedDate.format('DD/MM/YYYY')}
+                </span>
+              }
               extra={
                 <Space size="small">
                   {canManageSchedule && (
@@ -241,11 +323,15 @@ export default function Schedule(){
               {daySchedules.length === 0 ? (
                 <p style={{color:'#999'}}>Không có lịch</p>
               ) : (
-                <Space direction="vertical" style={{width:'100%'}}>
+                <Space direction="vertical" style={{width:'100%', gap: 12}}>
                   {daySchedules.map(schedule => (
                     <Card 
                       key={schedule.id} 
+                      className="dashboard-schedule-card"
                       size="small"
+                      style={{
+                        borderLeftColor: schedule.subject ? getSubjectColor(schedule.subject) : '#1890ff'
+                      }}
                       extra={
                         // Chỉ hiện nút Sửa/Xóa nếu có quyền
                         canManageSchedule && (
@@ -270,11 +356,19 @@ export default function Schedule(){
                         )
                       }
                     >
-                      <div><strong>{schedule.time ? schedule.time.slice(0, 5) : '09:00'}</strong> - {schedule.title}</div>
-                      {schedule.description && <div style={{fontSize:12, color:'#666'}}>{schedule.description}</div>}
-                      <Tag color={schedule.type === 'meeting' ? 'blue' : 'orange'}>
-                        {schedule.type === 'meeting' ? 'Cuộc họp' : 'Sự kiện'}
-                      </Tag>
+                      <div style={{marginBottom: 8}}>
+                        <span className="dashboard-schedule-time">
+                          <ClockCircleOutlined style={{marginRight: 4}} />
+                          {schedule.time ? schedule.time.slice(0, 5) : '09:00'}
+                        </span>
+                        <span style={{marginLeft: 8, fontSize: 14, fontWeight: 500}}>{schedule.title}</span>
+                      </div>
+                      {schedule.description && <div className="dashboard-schedule-desc">{schedule.description}</div>}
+                      {schedule.subject && (
+                        <Tag color={getSubjectColor(schedule.subject)} style={{marginTop: 8}}>
+                          {schedule.subject}
+                        </Tag>
+                      )}
                     </Card>
                   ))}
                 </Space>
@@ -326,14 +420,24 @@ export default function Schedule(){
             </Form.Item>
 
             <Form.Item 
-              name="type" 
-              label="Loại"
-              initialValue="event"
+              name="subject" 
+              label="Môn học"
             >
-              <Select options={[
-                {label:'Sự kiện', value:'event'},
-                {label:'Cuộc họp', value:'meeting'}
-              ]} />
+              <Select 
+                placeholder="Chọn môn (tuỳ chọn)"
+                allowClear
+                disabled={userRole === 'teacher' && teacherSubject !== null}
+                options={[
+                  {label:'Toán', value:'Toán'},
+                  {label:'Lý', value:'Lý'},
+                  {label:'Hóa', value:'Hóa'},
+                  {label:'Sinh', value:'Sinh'},
+                  {label:'Văn', value:'Văn'},
+                  {label:'Anh', value:'Anh'},
+                  {label:'Địa', value:'Địa'},
+                  {label:'Lịch sử', value:'Lịch sử'}
+                ]} 
+              />
             </Form.Item>
 
             <Form.Item>

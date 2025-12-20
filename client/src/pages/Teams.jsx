@@ -311,7 +311,14 @@ export default function Teams(){
         navigate('/login');
         return;
       }
-      setTeams(data.teams || [])
+      // Sắp xếp theo khối (grade) tăng dần, sau đó theo tên môn (subject)
+      const sortedTeams = (data.teams || []).sort((a, b) => {
+        if (a.grade !== b.grade) {
+          return (a.grade || 0) - (b.grade || 0);
+        }
+        return (a.subject || '').localeCompare(b.subject || '', 'vi');
+      });
+      setTeams(sortedTeams)
     } catch (err) {
       message.error('Lấy danh sách đội lỗi')
     } finally { setLoading(false) }

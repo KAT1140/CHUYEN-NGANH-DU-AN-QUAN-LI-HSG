@@ -1,6 +1,7 @@
 const Team = require('../models/Team');
 const Student = require('../models/Student');
 const User = require('../models/User'); 
+const Teacher = require('../models/Teacher');
 const bcrypt = require('bcryptjs'); 
 const saltRounds = 10; 
 const { Op } = require('sequelize');
@@ -19,7 +20,7 @@ const handleSequelizeError = (err, res) => {
 // --- 1. LẤY DANH SÁCH ĐỘI (CÓ LỌC MÔN) ---
 exports.getAll = async (req, res) => {
   try {
-    const { id, role, subject } = req.user; // Lấy thêm subject từ token user
+    const { id, role } = req.user;
     let teams;
 
     if (role === 'admin') {
@@ -29,17 +30,16 @@ exports.getAll = async (req, res) => {
       });
     } else if (role === 'teacher') {
       // Teacher: Chỉ xem đội có cùng môn với mình
-      let whereCondition = {};
+      // Lấy thông tin giáo viên từ database
+      const teacher = await Teacher.findOne({ where: { userId: id } });
       
-      if (subject) {
-        whereCondition = { subject: subject };
-      } else {
+      if (!teacher || !teacher.subject) {
         // Nếu giáo viên không có môn (dữ liệu cũ), trả về rỗng để an toàn
         return res.json({ teams: [] });
       }
 
       teams = await Team.findAll({
-        where: whereCondition,
+        where: { subject: teacher.subject },
         include: [{ model: Student, as: 'members' }]
       });
     } else {
@@ -122,7 +122,9 @@ exports.getMembersByTeam = async (req, res) => {
     // Logic check quyền (để an toàn)
     if (req.user.role === 'teacher') {
         const team = await Team.findByPk(teamId);
-        if (team && team.subject !== req.user.subject) {
+        const teacher = await Teacher.findOne({ where: { userId: req.user.id } });
+        
+        if (team && teacher && team.subject !== teacher.subject) {
              return res.status(403).json({ error: 'Không có quyền truy cập' });
         }
     }
@@ -133,6 +135,7 @@ exports.getMembersByTeam = async (req, res) => {
     }); 
     res.json({ members });
   } catch (err) {
+    console.error('Error getMembersByTeam:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -275,7 +278,9 @@ exports.deleteTeam = async (req, res) => {
     }
 
     if (req.user.role === 'teacher') {
-      if (!req.user.subject || team.subject !== req.user.subject) {
+      // Lấy thông tin giáo viên từ database
+      const teacher = await Teacher.findOne({ where: { userId: req.user.id } });
+      if (!teacher || !teacher.subject || team.subject !== teacher.subject) {
         return res.status(403).json({ error: 'Bạn chỉ có quyền xóa đội cùng môn' });
       }
     }

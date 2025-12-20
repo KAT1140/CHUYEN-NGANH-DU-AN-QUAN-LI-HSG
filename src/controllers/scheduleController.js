@@ -2,10 +2,40 @@
 
 const Schedule = require('../models/Schedule');
 const User = require('../models/User');
+const Teacher = require('../models/Teacher');
+const Student = require('../models/Student');
+const Team = require('../models/Team');
+const { Op } = require('sequelize');
 
 exports.getAll = async (req, res) => {
   try {
+    const { role, id } = req.user;
+    let whereClause = {};
+
+    // Giáo viên: xem lịch dạy (lịch của môn họ dạy)
+    if (role === 'teacher') {
+      const teacher = await Teacher.findOne({ where: { userId: id } });
+      if (teacher && teacher.subject) {
+        whereClause.subject = teacher.subject;
+      }
+    }
+    // Học sinh: xem lịch học (lịch của môn họ ôn)
+    else if (role === 'user') {
+      const student = await Student.findOne({ 
+        where: { userId: id },
+        include: [{ model: Team, as: 'team' }]
+      });
+      if (student && student.team && student.team.subject) {
+        whereClause.subject = student.team.subject;
+      } else {
+        // Nếu không có team, không hiển lịch nào
+        whereClause.subject = null;
+      }
+    }
+    // Admin thấy tất cả
+
     const schedules = await Schedule.findAll({
+      where: whereClause,
       include: {
         model: User,
         attributes: ['id', 'name', 'email'],
@@ -39,7 +69,7 @@ exports.getByDate = async (req, res) => {
 
 exports.create = async (req, res) => {
   try {
-    const { title, description, date, time, type } = req.body;
+    const { title, description, date, time, type, subject } = req.body;
     const userId = req.user.id;
 
     const schedule = await Schedule.create({
@@ -48,6 +78,7 @@ exports.create = async (req, res) => {
       date,
       time,
       type: type || 'event',
+      subject,
       createdBy: userId
     });
 
@@ -68,7 +99,7 @@ exports.update = async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
     const role = req.user.role;
-    const { title, description, date, time, type } = req.body;
+    const { title, description, date, time, type, subject } = req.body;
 
     const schedule = await Schedule.findByPk(id);
     if (!schedule) {
@@ -80,7 +111,7 @@ exports.update = async (req, res) => {
       return res.status(403).json({ error: 'Bạn không có quyền sửa lịch này' });
     }
 
-    await schedule.update({ title, description, date, time, type });
+    await schedule.update({ title, description, date, time, type, subject });
 
     res.json({ 
       schedule,

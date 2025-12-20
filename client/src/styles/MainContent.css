@@ -1,0 +1,40 @@
+/* MainContent.css */
+.main-header {
+  display: flex;
+  align-items: center;
+}
+
+.main-logo-link {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  margin-right: 24px;
+}
+
+.main-logo-text {
+  color: #fff;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.main-menu {
+  flex: 1;
+}
+
+.main-user-info {
+  color: #fff;
+}
+
+.main-username {
+  margin-right: 12px;
+}
+
+.main-content {
+  padding: 24px;
+  min-height: 80vh;
+}
+
+.not-found {
+  text-align: center;
+  margin-top: 100px;
+}

@@ -3,16 +3,19 @@
 import React, { useEffect, useState } from 'react'
 import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom'
 import { Layout, Menu, Button, Space } from 'antd'
+import './styles/MainContent.css'
 
 // Import đầy đủ các trang
 import LoginPage from './pages/LoginPage'
-import Dashboard from './pages/Dashboard' 
+import Dashboard from './pages/Schedule' 
 import Teams from './pages/Teams'
 import Scores from './pages/Scores'         
 import Home from './pages/Home'           
 import DangKi from './pages/dangki.jsx'
 import Evaluations from './pages/Evaluations' // <--- Đã import Đánh giá
 import Students from './pages/Students'       // <--- Đã import Học sinh
+import TeachersPage from './pages/TeachersPage' // <--- Import Giáo viên
+import Statistics from './pages/Statistics'     // <--- Import Thống kê
 
 import { getToken, getUser, removeToken } from './utils/auth'
 
@@ -49,27 +52,31 @@ export default function MainContent(){
 
   return (
       <Layout>
-        <Header style={{display:'flex', alignItems:'center'}}>
-          <Link to="/" style={{textDecoration:'none', display:'flex', alignItems:'center', marginRight:24}}>
-            <div style={{color:'#fff', fontWeight:700, fontSize: 18}}>HSG Manager</div>
+        <Header className="main-header">
+          <Link to="/" className="main-logo-link">
+            <div className="main-logo-text">HSG Manager</div>
           </Link>
 
           {/* MENU CHÍNH - Đã bao gồm Đánh Giá */}
-          <Menu theme="dark" mode="horizontal" selectable={false} style={{flex:1}}>
+          <Menu theme="dark" mode="horizontal" selectable={false} className="main-menu">
             <Menu.Item key="2"><Link to="/dashboard">Xem Lịch</Link></Menu.Item>
             <Menu.Item key="3"><Link to="/teams">Đội Tuyển</Link></Menu.Item>
             <Menu.Item key="4"><Link to="/scores">Điểm Số</Link></Menu.Item>
             <Menu.Item key="5"><Link to="/evaluations">Đánh Giá</Link></Menu.Item>
+            <Menu.Item key="8"><Link to="/statistics">Thống Kê</Link></Menu.Item>
             
             {/* Menu Quản lý học sinh (Chỉ Teacher/Admin thấy) */}
             {canManage && (
               <Menu.Item key="6"><Link to="/students">Học Sinh</Link></Menu.Item>
             )}
+            {canManage && (
+              <Menu.Item key="7"><Link to="/teachers">Giáo Viên</Link></Menu.Item>
+            )}
           </Menu>
           
           {user ? (
-            <div style={{color:'#fff'}}>
-              <span style={{marginRight:12}}>Xin chào, <strong>{user.name}</strong></span>
+            <div className="main-user-info">
+              <span className="main-username">Xin chào, <strong>{user.name}</strong></span>
               <Button size="small" onClick={logout} danger>Đăng xuất</Button>
             </div>
           ) : (
@@ -80,7 +87,7 @@ export default function MainContent(){
           )}
         </Header>
 
-        <Content style={{padding:24, minHeight: '80vh'}}>
+        <Content className="main-content">
           <Routes>
             <Route path="/" element={<Home/>} />
             <Route path="/login" element={<LoginPage/>} />
@@ -90,9 +97,11 @@ export default function MainContent(){
             <Route path="/teams" element={<Protected><Teams/></Protected>} />
             <Route path="/scores" element={<Protected><Scores/></Protected>} />
             <Route path="/evaluations" element={<Protected><Evaluations/></Protected>} />
+            <Route path="/statistics" element={<Protected><Statistics/></Protected>} />
             <Route path="/students" element={<Protected><Students/></Protected>} />
+            <Route path="/teachers" element={<Protected><TeachersPage/></Protected>} />
             
-            <Route path="*" element={<h1 style={{textAlign: 'center', marginTop: 100}}>404 - Trang không tồn tại</h1>} />
+            <Route path="*" element={<h1 className="not-found">404 - Trang không tồn tại</h1>} />
           </Routes>
         </Content>
       </Layout>

@@ -1,0 +1,33 @@
+/* Teachers.css */
+.teachers-header {
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+
+.teachers-cards-row {
+  margin-bottom: 16px;
+}
+
+.teachers-subject-count-active {
+  color: #3f8600;
+}
+
+.teachers-subject-count-inactive {
+  color: #999;
+}
+
+.teachers-filters {
+  margin-bottom: 16px;
+  width: 100%;
+  justify-content: space-between;
+}
+
+.teachers-filter-select {
+  width: 150px;
+}
+
+.teachers-form-button {
+  width: 100%;
+}

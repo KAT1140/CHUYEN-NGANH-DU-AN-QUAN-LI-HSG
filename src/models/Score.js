@@ -15,6 +15,7 @@ const Score = sequelize.define('Score', {
   score: { type: DataTypes.FLOAT, allowNull: false },
   maxScore: { type: DataTypes.FLOAT, defaultValue: 10 },
   examDate: { type: DataTypes.DATEONLY, allowNull: true },
+  award: { type: DataTypes.STRING, allowNull: true }, // Giải thưởng: Nhất, Nhì, Ba, Khuyến khích
   notes: { type: DataTypes.TEXT },
   createdBy: { 
     type: DataTypes.INTEGER, 

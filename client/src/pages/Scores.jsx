@@ -8,6 +8,7 @@ import { getScores, getTeams, createScore, updateScore, deleteScore, getStudents
 export default function Scores(){
   const navigate = useNavigate()
   const [scores, setScores] = useState([])
+  const [allScores, setAllScores] = useState([]) // Store all scores for filtering
   const [teams, setTeams] = useState([])
   const [members, setMembers] = useState([])
   const [students, setStudents] = useState([])
@@ -17,6 +18,11 @@ export default function Scores(){
   const [editingScore, setEditingScore] = useState(null)
   const [form] = Form.useForm()
   const [selectedTeamId, setSelectedTeamId] = useState(null)
+  const currentYear = new Date().getFullYear()
+  const [selectedYear, setSelectedYear] = useState(currentYear.toString())
+  const [availableYears, setAvailableYears] = useState([])
+  const [selectedSubject, setSelectedSubject] = useState('all')
+  const [availableSubjects, setAvailableSubjects] = useState([])
   
   // Get user role
   const userRole = localStorage.getItem('userRole') || 'user'
@@ -35,16 +41,56 @@ export default function Scores(){
       if (data.error) {
         console.error('Error fetching scores:', data.error)
         setScores([])
+        setAllScores([])
       } else {
-        setScores(data.scores || [])
+        const fetchedScores = data.scores || []
+        setAllScores(fetchedScores)
+        
+        // Extract unique years
+        const years = [...new Set(fetchedScores.map(s => new Date(s.createdAt).getFullYear()))]
+        setAvailableYears(years.sort((a, b) => b - a))
+        
+        // Extract unique subjects
+        const subjects = [...new Set(fetchedScores.map(s => s.member?.team?.subject).filter(Boolean))]
+        setAvailableSubjects(subjects.sort((a, b) => a.localeCompare(b, 'vi')))
+        
+        // Apply filters
+        applyFilters(fetchedScores, selectedYear, selectedSubject)
       }
     } catch (err) {
       console.error('Error fetching scores:', err)
       setScores([])
+      setAllScores([])
     } finally {
       setLoading(false)
     }
   }
+
+  // Apply filters function
+  const applyFilters = (scoresToFilter, year, subject) => {
+    let filtered = scoresToFilter
+    
+    // Filter by year
+    if (year !== 'all') {
+      filtered = filtered.filter(s => 
+        new Date(s.createdAt).getFullYear() === parseInt(year)
+      )
+    }
+    
+    // Filter by subject
+    if (subject !== 'all') {
+      filtered = filtered.filter(s => 
+        s.member?.team?.subject === subject
+      )
+    }
+    
+    setScores(filtered)
+  }
+
+  // Filter scores when year or subject selection changes
+  useEffect(() => {
+    applyFilters(allScores, selectedYear, selectedSubject)
+  }, [selectedYear, selectedSubject, allScores])
 
   // Fetch teams and members
   const fetchTeamsData = async () => {
@@ -102,7 +148,7 @@ export default function Scores(){
         memberId: values.memberId,
         testName: values.testName,
         score: values.score,
-        maxScore: values.maxScore || 10,
+        maxScore: 10,
         examDate: values.examDate ? values.examDate.format('YYYY-MM-DD') : null,
         notes: values.notes
       }
@@ -144,6 +190,7 @@ export default function Scores(){
       score: score.score,
       maxScore: score.maxScore,
       examDate: score.examDate ? dayjs(score.examDate) : null,
+      award: score.award,
       notes: score.notes
     })
     setIsModalVisible(true)
@@ -177,6 +224,18 @@ export default function Scores(){
 
   const columns = [
     {
+      title: 'Môn học',
+      dataIndex: ['member', 'team', 'subject'],
+      key: 'subject',
+      render: (_, record) => record.member?.team?.subject || 'N/A',
+      sorter: (a, b) => {
+        const subjectA = a.member?.team?.subject || '';
+        const subjectB = b.member?.team?.subject || '';
+        return subjectA.localeCompare(subjectB, 'vi');
+      },
+      defaultSortOrder: 'ascend'
+    },
+    {
       title: 'Tên học sinh',
       dataIndex: ['member', 'name'],
       key: 'studentName',
@@ -206,10 +265,22 @@ export default function Scores(){
       render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : 'N/A'
     },
     {
-      title: 'Giáo viên',
-      dataIndex: ['teacher', 'name'],
-      key: 'teacher',
-      render: (_, record) => record.teacher?.name || 'N/A'
+      title: 'Giải',
+      dataIndex: 'award',
+      key: 'award',
+      render: (award, record) => {
+        // Chỉ hiển thị giải cho bài thi HSG, không hiển thị cho bài kiểm tra
+        if (record.testName && record.testName.includes('Kỳ thi HSG')) {
+          return award || '-'
+        }
+        return '-'
+      }
+    },
+    {
+      title: 'Giáo viên bộ môn',
+      dataIndex: ['subjectTeacher', 'name'],
+      key: 'subjectTeacher',
+      render: (_, record) => record.subjectTeacher?.name || 'N/A'
     },
     {
       title: 'Thao tác',
@@ -260,6 +331,32 @@ export default function Scores(){
         <Button icon={<ReloadOutlined />} onClick={fetchScores} loading={loading}>
           Làm mới
         </Button>
+        <Select
+          value={selectedYear}
+          onChange={setSelectedYear}
+          style={{ width: 150 }}
+          placeholder="Chọn năm"
+        >
+          <Select.Option value="all">Tất cả năm</Select.Option>
+          {availableYears.map(year => (
+            <Select.Option key={year} value={year.toString()}>
+              Năm {year}
+            </Select.Option>
+          ))}
+        </Select>
+        <Select
+          value={selectedSubject}
+          onChange={setSelectedSubject}
+          style={{ width: 150 }}
+          placeholder="Chọn môn học"
+        >
+          <Select.Option value="all">Tất cả môn</Select.Option>
+          {availableSubjects.map(subject => (
+            <Select.Option key={subject} value={subject}>
+              {subject}
+            </Select.Option>
+          ))}
+        </Select>
       </Space>
 
       <Table
@@ -306,14 +403,7 @@ export default function Scores(){
             label="Điểm"
             rules={[{ required: true, message: 'Vui lòng nhập điểm!' }]}
           >
-            <InputNumber min={0} max={100} step={0.5} />
-          </Form.Item>
-
-          <Form.Item
-            name="maxScore"
-            label="Điểm tối đa"
-          >
-            <InputNumber min={1} max={100} step={1} placeholder="Mặc định: 10" />
+            <InputNumber min={0} max={10} step={0.1} style={{width: '100%'}} />
           </Form.Item>
 
           <Form.Item
@@ -321,6 +411,18 @@ export default function Scores(){
             label="Ngày thi"
           >
             <DatePicker style={{ width: '100%' }} />
+          </Form.Item>
+
+          <Form.Item
+            name="award"
+            label="Giải thưởng"
+          >
+            <Select placeholder="Chọn giải thưởng" allowClear>
+              <Select.Option value="Nhất">Giải Nhất</Select.Option>
+              <Select.Option value="Nhì">Giải Nhì</Select.Option>
+              <Select.Option value="Ba">Giải Ba</Select.Option>
+              <Select.Option value="Khuyến khích">Giải Khuyến khích</Select.Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
