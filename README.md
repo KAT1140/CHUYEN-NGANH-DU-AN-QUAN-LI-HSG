@@ -417,6 +417,69 @@ node scripts/fullSetup.js
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+## 🔌 API
+ 
+- **Base URL:** http://localhost:8080/api
+- **Xác thực:** Yêu cầu JWT Bearer token cho các endpoint được bảo vệ (gửi header `Authorization: Bearer <token>`).
+
+- **Endpoints (tóm tắt):**
+  - `POST /api/auth/login` — Đăng nhập, body: `{ email, password }` → trả về `{ token }`.
+  - `POST /api/auth/register` — (Nếu bật) tạo tài khoản người dùng.
+
+  - `GET /api/students` — Lấy danh sách học sinh (query: `?team=`, `?grade=`).
+  - `POST /api/students` — Tạo học sinh (admin/teacher).
+  - `GET /api/students/:id` — Lấy thông tin học sinh theo id.
+  - `PUT /api/students/:id` — Cập nhật học sinh.
+  - `DELETE /api/students/:id` — Xóa học sinh.
+
+  - `GET /api/teachers` — Lấy danh sách giáo viên.
+  - `POST /api/teachers` — Tạo giáo viên.
+  - `GET /api/teachers/:id` — Lấy thông tin giáo viên.
+  - `PUT /api/teachers/:id` — Cập nhật giáo viên.
+  - `DELETE /api/teachers/:id` — Xóa giáo viên.
+
+  - `GET /api/teams` — Lấy danh sách đội.
+  - `POST /api/teams` — Tạo đội.
+  - `GET /api/teams/:id` — Lấy thông tin đội.
+  - `PUT /api/teams/:id` — Cập nhật đội.
+  - `DELETE /api/teams/:id` — Xóa đội.
+
+  - `GET /api/schedules` — Lấy lịch học (lọc theo team/teacher/date).
+  - `POST /api/schedules` — Tạo lịch học.
+  - `PUT /api/schedules/:id` — Cập nhật lịch học.
+  - `DELETE /api/schedules/:id` — Xóa lịch học.
+
+  - `GET /api/scores` — Lấy danh sách điểm (lọc theo học sinh/team).
+  - `POST /api/scores` — Tạo bản ghi điểm.
+  - `PUT /api/scores/:id` — Cập nhật điểm.
+  - `DELETE /api/scores/:id` — Xóa điểm.
+
+  - `GET /api/evaluations` — Lấy đánh giá.
+  - `POST /api/evaluations` — Tạo đánh giá.
+
+  - `GET /api/statistics` — Lấy báo cáo tổng hợp và dữ liệu thống kê.
+
+- **Ví dụ nhanh:**
+
+  1) Đăng nhập lấy token
+
+  ```bash
+  curl -X POST http://localhost:8080/api/auth/login \
+    -H "Content-Type: application/json" \
+    -d '{"email":"namvokat@gmail.com","password":"123456"}'
+  ```
+
+  Phản hồi: `{ "token": "<JWT_TOKEN>" }`
+
+  2) Lấy danh sách học sinh (cần xác thực)
+
+  ```bash
+  curl http://localhost:8080/api/students \
+    -H "Authorization: Bearer <JWT_TOKEN>"
+  ```
+
+Để xem chi tiết request/response, xem các route trong `src/routes` và các controller trong `src/controllers`.
+
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
