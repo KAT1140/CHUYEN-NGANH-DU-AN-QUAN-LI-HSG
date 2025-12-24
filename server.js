@@ -13,39 +13,15 @@ const { sequelize, connectDB } = require('./src/config/database');
 // 2. Load Models (Chỉ load, KHÔNG setup quan hệ ở đây)
 const User = require('./src/models/User');
 const Team = require('./src/models/Team');
-const Student = require('./src/models/Student');
+const Student = require('./src/models/student');
 const Schedule = require('./src/models/Schedule');
 const Score = require('./src/models/Score');
 const Evaluation = require('./src/models/Evaluation');
-const Teacher = require('./src/models/Teacher');
+const Teacher = require('./src/models/teacher');
 
-// 3. Setup Associations (Quan hệ giữa các bảng - CHỈ KHAI BÁO 1 LẦN TẠI ĐÂY)
 
-// --- Quan hệ: Team <-> Student ---
-// Xóa Đội -> Xóa hết Thành viên trong đội
-Team.hasMany(Student, { foreignKey: 'teamId', as: 'members', onDelete: 'CASCADE' });
-Student.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
-
-// --- Quan hệ: User <-> Student ---
-// Xóa Tài khoản Học sinh -> Xóa hết thông tin thành viên của họ
-User.hasMany(Student, { foreignKey: 'userId', as: 'teamMembers' });
-Student.belongsTo(User, { foreignKey: 'userId', as: 'user', onDelete: 'CASCADE' });
-
-// --- Quan hệ: Score (Điểm) ---
-// Xóa Thành viên -> Xóa hết Điểm của họ
-Score.belongsTo(Student, { foreignKey: 'memberId', as: 'member', onDelete: 'CASCADE' });
-Student.hasMany(Score, { foreignKey: 'memberId', as: 'scores' });
-Score.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
-
-// --- Quan hệ: Evaluation (Đánh giá) ---
-// Xóa Thành viên -> Xóa hết Đánh giá của họ
-Evaluation.belongsTo(Student, { foreignKey: 'memberId', as: 'member', onDelete: 'CASCADE' });
-Student.hasMany(Evaluation, { foreignKey: 'memberId', as: 'evaluations' });
-Evaluation.belongsTo(User, { foreignKey: 'createdBy', as: 'teacher' });
-
-// --- Quan hệ: Schedule (Lịch) ---
-Schedule.belongsTo(User, { foreignKey: 'createdBy', as: 'creator' });
-User.hasMany(Schedule, { foreignKey: 'createdBy', as: 'schedules' });
+// Đảm bảo load associations Sequelize trước khi khởi động app
+require('./src/models/associations');
 
 // 4. Middlewares
 app.use(express.json());
@@ -112,7 +88,7 @@ if (fs.existsSync(clientDist)) {
 const start = async () => {
   try {
     await connectDB();
-    // await sequelize.sync({ alter: true }); // Disabled - database already setup
+    await sequelize.sync({ alter: true }); // Enable to create/update tables
 
     if (process.env.NODE_ENV !== 'production') {
       try {

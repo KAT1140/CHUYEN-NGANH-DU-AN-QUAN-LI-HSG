@@ -2,6 +2,8 @@
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, message, Space, Tag, Select, Card, Statistic, Row, Col } from 'antd';
 import { UserOutlined, ReloadOutlined, PlusOutlined, BookOutlined } from '@ant-design/icons';
+import AppLayout from '../components/Layout/AppLayout';
+import AppCard from '../components/UI/AppCard';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
@@ -17,7 +19,7 @@ const Teachers = () => {
   const canManageTeachers = userRole === 'admin';
 
   // Danh sách môn học
-  const subjects = ['Toán', 'Vật Lý', 'Hóa học', 'Sinh học', 'Ngữ Văn', 'Tiếng Anh', 'Lịch Sử', 'Địa Lý', 'GDCD'];
+  const subjects = ['Toán', 'Lý', 'Hóa', 'Sinh', 'Văn', 'Anh', 'Sử', 'Địa', 'Tin'];
 
   const fetchTeachers = async () => {
     setLoading(true);
@@ -124,24 +126,41 @@ const Teachers = () => {
   const columns = [
     {
       title: 'Họ và tên',
-      dataIndex: 'fullName',
-      key: 'fullName',
-      sorter: (a, b) => a.fullName.localeCompare(b.fullName)
+      dataIndex: 'name',
+      key: 'name',
+      sorter: (a, b) => a.name.localeCompare(b.name)
     },
     {
       title: 'Môn dạy',
       dataIndex: 'subject',
       key: 'subject',
-      render: (subject) => <Tag color="blue">{subject}</Tag>,
+      render: (subject) => {
+        const colors = {
+          'Toán': 'blue',
+          'Lý': 'green', 
+          'Hóa': 'orange',
+          'Sinh': 'cyan',
+          'Văn': 'purple',
+          'Anh': 'magenta',
+          'Sử': 'red',
+          'Địa': 'gold',
+          'Tin': 'lime'
+        };
+        return <Tag color={colors[subject] || 'blue'}>{subject}</Tag>;
+      },
       filters: [
         { text: 'Toán', value: 'Toán' },
-        { text: 'Vật Lý', value: 'Vật Lý' },
-        { text: 'Hóa học', value: 'Hóa học' },
-        { text: 'Sinh học', value: 'Sinh học' },
-        { text: 'Ngữ Văn', value: 'Ngữ Văn' },
-        { text: 'Tiếng Anh', value: 'Tiếng Anh' }
+        { text: 'Lý', value: 'Lý' },
+        { text: 'Hóa', value: 'Hóa' },
+        { text: 'Sinh', value: 'Sinh' },
+        { text: 'Văn', value: 'Văn' },
+        { text: 'Anh', value: 'Anh' },
+        { text: 'Sử', value: 'Sử' },
+        { text: 'Địa', value: 'Địa' },
+        { text: 'Tin', value: 'Tin' }
       ],
-      onFilter: (value, record) => record.subject === value
+      onFilter: (value, record) => record.subject === value,
+      sorter: (a, b) => a.subject.localeCompare(b.subject)
     },
     {
       title: 'Tổ môn',
@@ -154,7 +173,27 @@ const Teachers = () => {
       dataIndex: 'specialization',
       key: 'specialization',
       ellipsis: true,
-      render: (spec) => spec || '-'
+      render: (specialization) => specialization || '-'
+    },
+    {
+      title: 'Đội phụ trách',
+      dataIndex: 'team',
+      key: 'team',
+      render: (team) => {
+        if (!team) {
+          return <Tag color="default">Chưa có đội</Tag>;
+        }
+        return (
+          <Tag color="blue" style={{ cursor: 'pointer' }}>
+            {team.name}
+          </Tag>
+        );
+      },
+      sorter: (a, b) => {
+        const teamA = a.team ? a.team.name : '';
+        const teamB = b.team ? b.team.name : '';
+        return teamA.localeCompare(teamB);
+      }
     },
     {
       title: 'Email',
@@ -162,10 +201,10 @@ const Teachers = () => {
       key: 'email'
     },
     {
-      title: 'Điện thoại',
+      title: 'Số điện thoại',
       dataIndex: 'phoneNumber',
       key: 'phoneNumber',
-      render: (phone) => phone || '-'
+      render: (phone) => phone || 'Chưa cập nhật'
     },
     {
       title: 'Thao tác',
@@ -175,7 +214,7 @@ const Teachers = () => {
           <Button 
             danger 
             size="small" 
-            onClick={() => handleDelete(record.id, record.fullName)}
+            onClick={() => handleDelete(record.id, record.name)}
           >
             Xóa
           </Button>
@@ -185,56 +224,68 @@ const Teachers = () => {
   ];
 
   return (
-    <div>
-      <Space style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-        <h2><UserOutlined /> Quản lý Giáo viên</h2>
-      </Space>
-      
-      <Space style={{ marginBottom: 16, width: '100%', justifyContent: 'space-between' }}>
-        <Space>
-          {canManageTeachers && (
+    <AppLayout 
+      title="Quản lý Giáo viên" 
+      subtitle="Danh sách và thông tin giáo viên HSG"
+    >
+      <AppCard 
+        title="Danh sách giáo viên"
+        variant="glass"
+        extra={
+          <Space>
+            {canManageTeachers && (
+              <Button 
+                type="primary" 
+                icon={<PlusOutlined />} 
+                onClick={() => setIsModalVisible(true)}
+              >
+                Thêm giáo viên
+              </Button>
+            )}
+            
             <Button 
-              type="primary" 
-              icon={<PlusOutlined />} 
-              onClick={() => setIsModalVisible(true)}
+              icon={<ReloadOutlined />} 
+              onClick={fetchTeachers} 
+              loading={loading}
             >
-              Thêm giáo viên
+              Làm mới
             </Button>
-          )}
-          
-          <Button 
-            icon={<ReloadOutlined />} 
-            onClick={fetchTeachers} 
-            loading={loading}
-          >
-            Làm mới
-          </Button>
-        </Space>
+          </Space>
+        }
+      >
+        {/* Filter Section */}
+        <div style={{ marginBottom: 24 }}>
+          <Space>
+            <span>Lọc theo môn:</span>
+            <Select 
+              value={selectedSubject} 
+              onChange={setSelectedSubject}
+              style={{ width: 150 }}
+            >
+              <Select.Option value="all">Tất cả</Select.Option>
+              {subjects.map(subject => (
+                <Select.Option key={subject} value={subject}>
+                  {subject} ({getSubjectCount(subject)})
+                </Select.Option>
+              ))}
+            </Select>
+          </Space>
+        </div>
 
-        <Space>
-          <span>Lọc theo môn:</span>
-          <Select 
-            value={selectedSubject} 
-            onChange={setSelectedSubject}
-            style={{ width: 150 }}
-          >
-            <Select.Option value="all">Tất cả</Select.Option>
-            {subjects.map(subject => (
-              <Select.Option key={subject} value={subject}>
-                {subject} ({getSubjectCount(subject)})
-              </Select.Option>
-            ))}
-          </Select>
-        </Space>
-      </Space>
-
-      <Table 
-        dataSource={filteredTeachers} 
-        columns={columns} 
-        rowKey="id" 
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-      />
+        <Table 
+          dataSource={filteredTeachers} 
+          columns={columns} 
+          rowKey="id" 
+          loading={loading}
+          pagination={{ 
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} giáo viên`
+          }}
+          scroll={{ x: 1200 }}
+        />
+      </AppCard>
 
       <Modal
         title="Thêm giáo viên mới"
@@ -305,7 +356,7 @@ const Teachers = () => {
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppLayout>
   );
 };
 

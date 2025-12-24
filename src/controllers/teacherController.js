@@ -1,15 +1,55 @@
 // File: src/controllers/teacherController.js
-const Teacher = require('../models/Teacher');
+const Teacher = require('../models/teacher');
 const User = require('../models/User');
+const Team = require('../models/Team');
 const bcrypt = require('bcryptjs');
 
 // Lấy danh sách tất cả giáo viên
 exports.getAll = async (req, res) => {
   try {
+    // Lấy từ bảng Teacher, join User để lấy email, tên, v.v.
     const teachers = await Teacher.findAll({
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email', 'role']
+        }
+      ],
       order: [['fullName', 'ASC']]
     });
-    res.json({ teachers });
+
+    // Lấy thông tin teams mà giáo viên phụ trách
+    const teacherIds = teachers.map(t => t.user ? t.user.id : null).filter(id => id !== null);
+    const teams = await Team.findAll({
+      where: {
+        teacherId: teacherIds
+      },
+      attributes: ['id', 'name', 'subject', 'grade', 'teacherId']
+    });
+
+    // Tạo map teacherId -> team
+    const teacherTeamMap = {};
+    teams.forEach(team => {
+      teacherTeamMap[team.teacherId] = team;
+    });
+
+    // Định dạng lại cho frontend
+    const result = teachers.map(t => ({
+      id: t.user ? t.user.id : null,
+      name: t.fullName,
+      subject: t.subject,
+      department: t.department,
+      specialization: t.specialization,
+      email: t.email,
+      phoneNumber: t.phoneNumber,
+      team: t.user && teacherTeamMap[t.user.id] ? {
+        id: teacherTeamMap[t.user.id].id,
+        name: teacherTeamMap[t.user.id].name,
+        grade: teacherTeamMap[t.user.id].grade
+      } : null
+    }));
+    res.json({ teachers: result });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

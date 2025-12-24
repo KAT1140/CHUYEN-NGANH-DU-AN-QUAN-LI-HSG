@@ -3,8 +3,8 @@ const router = express.Router();
 const controller = require('../controllers/authController');
 const { auth } = require('../middleware/authMiddleware');
 const User = require('../models/User');
-const Teacher = require('../models/Teacher');
-const Student = require('../models/Student');
+const Teacher = require('../models/teacher');
+const Student = require('../models/student');
 const Team = require('../models/Team');
 
 router.post('/login', controller.login);

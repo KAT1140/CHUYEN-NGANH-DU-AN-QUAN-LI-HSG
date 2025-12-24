@@ -8,6 +8,8 @@ import {
   BarChartOutlined
 } from '@ant-design/icons';
 import { getToken } from '../utils/auth';
+import AppLayout from '../components/Layout/AppLayout';
+import AppCard from '../components/UI/AppCard';
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
@@ -126,9 +128,10 @@ export default function Statistics() {
   ];
 
   return (
-    <div>
-      <Space style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-        <h2><BarChartOutlined /> Thống kê kết quả</h2>
+    <AppLayout 
+      title="Thống kê kết quả" 
+      subtitle="Phân tích và báo cáo kết quả học tập"
+      headerExtra={
         <Space>
           <span>Năm học:</span>
           <Select 
@@ -141,37 +144,39 @@ export default function Statistics() {
             ))}
           </Select>
         </Space>
-      </Space>
-
+      }
+    >
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <Spin size="large" />
-        </div>
+        <AppCard>
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <Spin size="large" />
+          </div>
+        </AppCard>
       ) : stats ? (
         <>
           {/* Summary Cards */}
           <Row gutter={16} style={{ marginBottom: 16 }}>
             <Col span={6}>
-              <Card>
+              <AppCard variant="stats" size="small">
                 <Statistic 
                   title="Năm học" 
                   value={stats.year} 
                   prefix={<CalendarOutlined />}
                   formatter={(value) => value}
                 />
-              </Card>
+              </AppCard>
             </Col>
             <Col span={6}>
-              <Card>
+              <AppCard variant="stats" size="small">
                 <Statistic 
                   title="Tổng số bài thi" 
                   value={stats.totalScores} 
                   prefix={<BookOutlined />}
                 />
-              </Card>
+              </AppCard>
             </Col>
             <Col span={6}>
-              <Card>
+              <AppCard variant="stats" size="small">
                 <Statistic 
                   title="Điểm trung bình" 
                   value={stats.averageScore} 
@@ -179,35 +184,35 @@ export default function Statistics() {
                   prefix={<LineChartOutlined />}
                   valueStyle={{ color: stats.averageScore >= 8 ? '#3f8600' : '#1890ff' }}
                 />
-              </Card>
+              </AppCard>
             </Col>
             <Col span={6}>
-              <Card>
+              <AppCard variant="stats" size="small">
                 <Statistic 
                   title="Số môn học" 
                   value={Object.keys(stats.bySubject || {}).length} 
                   prefix={<TrophyOutlined />}
                 />
-              </Card>
+              </AppCard>
             </Col>
           </Row>
 
           <Row gutter={16} style={{ marginBottom: 16 }}>
             {/* By Subject */}
             <Col span={12}>
-              <Card title="Thống kê theo môn học" size="small">
+              <AppCard title="Thống kê theo môn học" variant="glass">
                 <Table 
                   dataSource={subjectData} 
                   columns={subjectColumns}
                   pagination={false}
                   size="small"
                 />
-              </Card>
+              </AppCard>
             </Col>
 
             {/* By Month */}
             <Col span={12}>
-              <Card title="Thống kê theo tháng" size="small">
+              <AppCard title="Thống kê theo tháng" variant="glass">
                 <Table 
                   dataSource={monthData} 
                   columns={monthColumns}
@@ -215,27 +220,27 @@ export default function Statistics() {
                   size="small"
                   scroll={{ y: 300 }}
                 />
-              </Card>
+              </AppCard>
             </Col>
           </Row>
 
           {/* Top Students */}
-          <Card title={`🏆 Top 10 học sinh xuất sắc năm ${stats.year}`} size="small">
+          <AppCard title={`🏆 Top 10 học sinh xuất sắc năm ${stats.year}`} variant="glass">
             <Table 
               dataSource={stats.topStudents || []} 
               columns={topStudentsColumns}
               pagination={false}
               size="small"
             />
-          </Card>
+          </AppCard>
         </>
       ) : (
-        <Card>
+        <AppCard>
           <div style={{ textAlign: 'center', padding: '50px', color: '#999' }}>
             Chưa có dữ liệu thống kê
           </div>
-        </Card>
+        </AppCard>
       )}
-    </div>
+    </AppLayout>
   );
 }

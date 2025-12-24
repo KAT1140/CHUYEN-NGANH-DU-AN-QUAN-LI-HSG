@@ -28,8 +28,7 @@ const Teacher = sequelize.define('Teacher', {
   },
   email: {
     type: DataTypes.STRING,
-    allowNull: false,
-    unique: true
+    allowNull: false
   },
   phoneNumber: {
     type: DataTypes.STRING
@@ -46,5 +45,6 @@ const Teacher = sequelize.define('Teacher', {
   timestamps: true,
   tableName: 'teachers'
 });
+
 
 module.exports = Teacher;

@@ -1,7 +1,8 @@
 // File: src/controllers/evaluationController.js
 const Evaluation = require('../models/Evaluation');
-const Student = require('../models/Student');
+const Student = require('../models/student');
 const User = require('../models/User');
+const Team = require('../models/Team');
 const { Op } = require('sequelize');
 
 // Lấy danh sách đánh giá
@@ -22,7 +23,14 @@ exports.getAll = async (req, res) => {
     const evaluations = await Evaluation.findAll({
       where: whereClause,
       include: [
-        { model: Student, as: 'member' },
+        { 
+          model: Student, 
+          as: 'member',
+          include: [{ 
+            model: Team, 
+            as: 'team'
+          }]
+        },
         { model: User, as: 'teacher', attributes: ['id', 'name'] }
       ],
       order: [['date', 'DESC']]

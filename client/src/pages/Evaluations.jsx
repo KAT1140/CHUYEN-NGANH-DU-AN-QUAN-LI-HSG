@@ -1,10 +1,12 @@
 // File: client/src/pages/Evaluations.jsx
 
 import React, { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, Space, message, Rate, DatePicker, Tag } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, Space, message, DatePicker, Tag } from 'antd'
 import { PlusOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { getEvaluations, getTeams, createEvaluation, deleteEvaluation } from '../utils/api'
+import AppLayout from '../components/Layout/AppLayout'
+import AppCard from '../components/UI/AppCard'
 
 export default function Evaluations(){
   const [evaluations, setEvaluations] = useState([])
@@ -58,7 +60,6 @@ export default function Evaluations(){
       const payload = {
         memberId: values.memberId,
         content: values.content,
-        rating: values.rating || 5, // Mặc định 5 sao nếu không chọn
         date: values.date ? values.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')
       }
       
@@ -112,17 +113,22 @@ export default function Evaluations(){
     {
       title: 'Đánh giá / Nhận xét',
       dataIndex: 'content',
-      width: '40%'
-    },
-    {
-      title: 'Thái độ',
-      dataIndex: 'rating',
-      render: (r) => <Rate disabled defaultValue={r} count={10} style={{fontSize:12}} />
+      width: '50%'
     },
     {
       title: 'Giáo viên',
       dataIndex: ['teacher', 'name'],
-      render: (text) => <Tag color="blue">{text || 'Admin'}</Tag>
+      render: (text, record) => {
+        // Hiển thị tên giáo viên phụ trách team
+        const teacherName = text || 'N/A';
+        const subject = record.member?.team?.subject;
+        return (
+          <Tag color="blue">
+            {teacherName}
+            {subject && <div style={{fontSize: '10px', opacity: 0.8}}>({subject})</div>}
+          </Tag>
+        );
+      }
     },
     {
       title: '',
@@ -134,23 +140,39 @@ export default function Evaluations(){
   ]
 
   return (
-    <div>
-      <Space style={{marginBottom:16}}>
-        {canManage && (
-          <Button type="primary" icon={<PlusOutlined/>} onClick={()=>setIsModalVisible(true)}>
-            Thêm đánh giá
-          </Button>
-        )}
-        <Button icon={<ReloadOutlined/>} onClick={fetchData}>Làm mới</Button>
-      </Space>
-
-      <Table 
-        dataSource={evaluations} 
-        columns={columns} 
-        rowKey="id" 
-        loading={loading}
-        locale={{ emptyText: 'Chưa có đánh giá nào' }}
-      />
+    <AppLayout 
+      title="Đánh giá Học sinh" 
+      subtitle="Theo dõi và đánh giá quá trình học tập của học sinh"
+    >
+      <AppCard 
+        title="Danh sách đánh giá"
+        variant="glass"
+        extra={
+          <Space>
+            {canManage && (
+              <Button type="primary" icon={<PlusOutlined/>} onClick={()=>setIsModalVisible(true)}>
+                Thêm đánh giá
+              </Button>
+            )}
+            <Button icon={<ReloadOutlined/>} onClick={fetchData}>Làm mới</Button>
+          </Space>
+        }
+      >
+        <Table 
+          dataSource={evaluations} 
+          columns={columns} 
+          rowKey="id" 
+          loading={loading}
+          locale={{ emptyText: 'Chưa có đánh giá nào' }}
+          pagination={{ 
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} đánh giá`
+          }}
+          scroll={{ x: 1000 }}
+        />
+      </AppCard>
 
       <Modal
         title="Thêm đánh giá học sinh"
@@ -182,10 +204,6 @@ export default function Evaluations(){
             <DatePicker style={{width:'100%'}} format="DD/MM/YYYY" />
           </Form.Item>
 
-          <Form.Item name="rating" label="Điểm chuyên cần / Thái độ (1-10)" initialValue={8}>
-            <Rate count={10} />
-          </Form.Item>
-
           <Form.Item 
             name="content" 
             label="Nội dung nhận xét" 
@@ -197,6 +215,6 @@ export default function Evaluations(){
           <Button type="primary" htmlType="submit" style={{width:'100%'}}>Lưu đánh giá</Button>
         </Form>
       </Modal>
-    </div>
+    </AppLayout>
   )
 }

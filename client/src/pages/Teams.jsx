@@ -11,6 +11,8 @@ import {
 } from '../utils/api' 
 
 import { TeamOutlined, ReloadOutlined, UserAddOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import AppLayout from '../components/Layout/AppLayout'
+import AppCard from '../components/UI/AppCard'
 
 const { Title, Text } = Typography;
 const { Panel } = Collapse;
@@ -18,7 +20,7 @@ const { Panel } = Collapse;
 // =====================================================================
 // COMPONENT PHỤ: QUẢN LÝ THÀNH VIÊN (MemberManager)
 // =====================================================================
-function MemberManager({ teamId, teamName }){
+function MemberManager({ teamId, teamName, teamSubject }){
   const [members, setMembers] = useState([]);
   const [isMemberModalVisible, setIsMemberModalVisible] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false); 
@@ -31,7 +33,29 @@ function MemberManager({ teamId, teamName }){
   
   // Lấy role từ localStorage
   const userRole = localStorage.getItem('userRole') || 'user';
-  const canAddMember = userRole !== 'user'; // Chỉ admin/teacher được thêm
+  const [teacherSubject, setTeacherSubject] = useState(null);
+  
+  // Lấy thông tin môn của giáo viên
+  const fetchTeacherSubject = async () => {
+    if (userRole === 'teacher') {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.teacher && data.teacher.subject) {
+            setTeacherSubject(data.teacher.subject);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching teacher subject:', err);
+      }
+    }
+  };
+  
+  const canAddMember = userRole !== 'user' && (userRole === 'admin' || (userRole === 'teacher' && teacherSubject === teamSubject));
 
   const fetchMembers = async () => { 
     setLoading(true);
@@ -63,6 +87,7 @@ function MemberManager({ teamId, teamName }){
   
   useEffect(() => {
       fetchMembers();
+      fetchTeacherSubject();
       // Khi mở modal thêm mới thì mới cần load danh sách học sinh
       if (isMemberModalVisible) {
         fetchAvailableStudents();
@@ -160,7 +185,7 @@ function MemberManager({ teamId, teamName }){
   const memberColumns = [
     { title: 'Tên thành viên', dataIndex: 'name', key: 'name' },
     { title: 'Mã số HS', dataIndex: 'studentId', key: 'studentId' },
-    { title: 'Khối', dataIndex: 'grade', key: 'grade', render: (grade) => grade ? `Khối ${grade}` : '-' },
+    { title: 'Lớp', dataIndex: 'className', key: 'className', render: (className) => className || '-' },
     { title: 'Liên hệ', dataIndex: 'contact', key: 'contact' },
     {
         title: 'Thao tác',
@@ -301,6 +326,28 @@ export default function Teams(){
 
   const userRole = localStorage.getItem('userRole') || 'user';
   const canCreateTeam = userRole !== 'user'; 
+  
+  // Lấy thông tin môn của giáo viên
+  const [teacherSubject, setTeacherSubject] = useState(null);
+  
+  const fetchTeacherSubject = async () => {
+    if (userRole === 'teacher') {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch('/api/auth/me', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.teacher && data.teacher.subject) {
+            setTeacherSubject(data.teacher.subject);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching teacher subject:', err);
+      }
+    }
+  }; 
 
   const fetchTeams = async () => {
     setLoading(true)
@@ -339,6 +386,7 @@ export default function Teams(){
 
   useEffect(()=>{ 
     fetchTeams(); 
+    fetchTeacherSubject();
     if (canCreateTeam && isModalVisible) {
       fetchStudentsForNewTeam();
     }
@@ -422,11 +470,11 @@ export default function Teams(){
       <Space>
         <TeamOutlined />
         <strong>{team.name}</strong> 
-        {team.grade && <Tag color="blue">Khối {team.grade}</Tag>}
+        {team.grade && <Tag color="blue">{team.grade}</Tag>}
         <span style={{fontSize: 12, color: '#888'}}>({team.members ? team.members.length : 0} thành viên)</span>
       </Space>
     ),
-    extra: (canCreateTeam) ? (
+    extra: (canCreateTeam && (userRole === 'admin' || (userRole === 'teacher' && teacherSubject === team.subject))) ? (
       <Button 
         danger 
         size="small" 
@@ -439,30 +487,38 @@ export default function Teams(){
         Xóa đội
       </Button>
     ) : null,
-    children: <MemberManager teamId={team.id} teamName={team.name} />,
+    children: <MemberManager teamId={team.id} teamName={team.name} teamSubject={team.subject} />,
   }));
 
 
   return (
-    <div>
-      <Space style={{marginBottom:16}}>
-        {/* Nút Tạo đội - Ẩn với user thường */}
-        {canCreateTeam && (
-          <Button 
-            type="primary" 
-            icon={<TeamOutlined />} 
-            onClick={()=>setIsModalVisible(true)}
-          >
-            Tạo đội mới
-          </Button>
-        )}
-        
-        <Button onClick={fetchTeams} icon={<ReloadOutlined />} loading={loading}>
-          Làm mới danh sách
-        </Button>
-      </Space>
-
-      <Collapse items={teamItems} />
+    <AppLayout 
+      title="Quản lý Đội tuyển HSG" 
+      subtitle="Tổ chức và quản lý các đội tuyển học sinh giỏi"
+    >
+      <AppCard 
+        title="Danh sách đội tuyển"
+        variant="glass"
+        extra={
+          <Space>
+            {canCreateTeam && (
+              <Button 
+                type="primary" 
+                icon={<TeamOutlined />} 
+                onClick={() => setIsModalVisible(true)}
+              >
+                Tạo đội mới
+              </Button>
+            )}
+            
+            <Button onClick={fetchTeams} icon={<ReloadOutlined />} loading={loading}>
+              Làm mới danh sách
+            </Button>
+          </Space>
+        }
+      >
+        <Collapse items={teamItems} />
+      </AppCard>
 
       {/* Modal Tạo Team Mới */}
       <Modal 
@@ -511,6 +567,6 @@ export default function Teams(){
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppLayout>
   )
 }

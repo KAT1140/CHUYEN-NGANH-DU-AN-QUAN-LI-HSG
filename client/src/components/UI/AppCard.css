@@ -1,0 +1,160 @@
+@import '../../styles/GlobalTheme.css';
+
+.app-card {
+  border-radius: var(--radius-xl);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: var(--shadow-lg);
+  transition: var(--transition-normal);
+  overflow: hidden;
+  position: relative;
+}
+
+.app-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 100%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-card .ant-card-body {
+  position: relative;
+  z-index: 1;
+}
+
+/* Variants */
+.app-card--default {
+  background: var(--bg-primary);
+}
+
+.app-card--glass {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+}
+
+.app-card--gradient {
+  background: linear-gradient(135deg, var(--bg-primary) 0%, var(--primary-bg) 100%);
+}
+
+/* Sizes */
+.app-card--small .ant-card-body {
+  padding: var(--space-md);
+}
+
+.app-card--default .ant-card-body {
+  padding: var(--space-lg);
+}
+
+.app-card--large .ant-card-body {
+  padding: var(--space-xl);
+}
+
+/* Hoverable */
+.app-card--hoverable:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: rgba(24, 144, 255, 0.3);
+}
+
+/* Title Styling */
+.app-card .ant-card-head {
+  border-bottom: 1px solid var(--border-secondary);
+  background: linear-gradient(135deg, var(--primary-bg) 0%, rgba(255, 255, 255, 0.8) 100%);
+  padding: var(--space-md) var(--space-lg);
+}
+
+.app-card-title {
+  margin: 0;
+}
+
+.app-card-title-text {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.app-card-subtitle {
+  margin: var(--space-xs) 0 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  font-weight: var(--font-weight-normal);
+}
+
+.app-card-content {
+  position: relative;
+}
+
+/* Loading State */
+.app-card .ant-card-loading-content {
+  padding: var(--space-xl);
+}
+
+/* Special Cards */
+.app-card--stats {
+  text-align: center;
+  background: linear-gradient(135deg, var(--success-bg) 0%, var(--bg-primary) 100%);
+}
+
+.app-card--stats .app-card-title-text {
+  justify-content: center;
+  color: var(--success-color);
+}
+
+.app-card--warning {
+  background: linear-gradient(135deg, var(--warning-bg) 0%, var(--bg-primary) 100%);
+  border-left: 4px solid var(--warning-color);
+}
+
+.app-card--error {
+  background: linear-gradient(135deg, var(--error-bg) 0%, var(--bg-primary) 100%);
+  border-left: 4px solid var(--error-color);
+}
+
+/* Animation */
+.app-card {
+  animation: slideIn 0.4s ease-out;
+}
+
+.app-card:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.app-card:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.app-card:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-card {
+    border-radius: var(--radius-lg);
+  }
+  
+  .app-card .ant-card-head {
+    padding: var(--space-sm) var(--space-md);
+  }
+  
+  .app-card-title-text {
+    font-size: var(--font-size-md);
+  }
+  
+  .app-card--small .ant-card-body,
+  .app-card--default .ant-card-body {
+    padding: var(--space-md);
+  }
+  
+  .app-card--large .ant-card-body {
+    padding: var(--space-lg);
+  }
+}

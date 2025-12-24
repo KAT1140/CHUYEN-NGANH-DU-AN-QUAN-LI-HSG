@@ -2,7 +2,7 @@ const { Sequelize } = require('sequelize');
 require('dotenv').config();
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'hsg_db',
+  process.env.DB_NAME || 'hsg_management_db',
   process.env.DB_USER || 'root',
   process.env.DB_PASS || '',
   {
@@ -10,15 +10,26 @@ const sequelize = new Sequelize(
     port: process.env.DB_PORT || 3306,
     dialect: 'mysql',
     logging: false,
+    dialectOptions: {
+      connectTimeout: 60000,
+      acquireTimeout: 60000,
+      timeout: 60000,
+    },
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    }
   }
 );
 
 const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log('✅ DB connection OK');
+    console.log('[OK] DB connection OK');
   } catch (err) {
-    console.error('❌ DB connection error', err);
+    console.error('[ERROR] DB connection error', err);
     throw err;
   }
 };

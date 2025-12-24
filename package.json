@@ -8,7 +8,6 @@
     "dev": "nodemon server.js"
   },
   "dependencies": {
-    "@ant-design/icons": "^6.1.0",
     "bcryptjs": "^2.4.3",
     "dayjs": "^1.11.19",
     "dotenv": "^16.0.0",

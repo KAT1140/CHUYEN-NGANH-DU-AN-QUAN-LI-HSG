@@ -3,6 +3,8 @@ import { Card, Form, Input, Button, message, Checkbox } from 'antd'
 // ĐÃ SỬA LỖI: Thêm Link vào import
 import { useNavigate, Link } from 'react-router-dom' 
 import { setToken, setUser } from '../utils/auth' 
+import AppLayout from '../components/Layout/AppLayout'
+import AppCard from '../components/UI/AppCard' 
 
 export default function LoginPage(){
   const navigate = useNavigate()
@@ -60,35 +62,46 @@ export default function LoginPage(){
   }
 
   return (
-    <div style={{display:'flex',height:'100vh',alignItems:'center',justifyContent:'center'}}>
-      <Card title="HSG Login" style={{width:360}}>
-        <Form form={form} onFinish={onFinish} layout="vertical">
-          {/* TRƯỜNG EMAIL */}
-          <Form.Item name="email" label="Email" rules={[{required:true, message: 'Vui lòng nhập Email!'}]}> 
-            <Input/> 
-          </Form.Item>
-          
-          {/* TRƯỜNG MẬT KHẨU  */}
-          <Form.Item name="password" label="Mật khẩu" rules={[{required:true, message: 'Vui lòng nhập Mật khẩu!'}]}> 
-            <Input.Password/> 
-          </Form.Item>
-          
-          {/* CHECKBOX LƯU THÔNG TIN ĐĂNG NHẬP */}
-          <Form.Item name="remember" valuePropName="checked">
-            <Checkbox>Lưu thông tin đăng nhập</Checkbox>
-          </Form.Item>
-          
-          {/* NÚT SUBMIT */}
-          <Form.Item>
-            <Button type="primary" htmlType="submit" style={{width:'100%'}}>Đăng Nhập</Button>
-          </Form.Item>
-          
-          {/* LIÊN KẾT ĐĂNG KÝ */}
-          <Form.Item style={{textAlign: 'center', marginBottom: 0}}>
-            Chưa có tài khoản? <Link to="/dangki">Đăng ký ngay</Link>
-          </Form.Item>
-        </Form>
-      </Card>
-    </div>
+    <AppLayout 
+      title="Đăng nhập HSG Manager" 
+      subtitle="Đăng nhập để truy cập hệ thống quản lý"
+    >
+      <div style={{display:'flex', justifyContent:'center', paddingTop: '2rem'}}>
+        <AppCard 
+          title="Đăng nhập" 
+          variant="glass"
+          style={{width: 400, maxWidth: '100%'}}
+        >
+          <Form form={form} onFinish={onFinish} layout="vertical">
+            {/* TRƯỜNG EMAIL */}
+            <Form.Item name="email" label="Email" rules={[{required:true, message: 'Vui lòng nhập Email!'}]}> 
+              <Input size="large" placeholder="Nhập email của bạn"/> 
+            </Form.Item>
+            
+            {/* TRƯỜNG MẬT KHẨU  */}
+            <Form.Item name="password" label="Mật khẩu" rules={[{required:true, message: 'Vui lòng nhập Mật khẩu!'}]}> 
+              <Input.Password size="large" placeholder="Nhập mật khẩu"/> 
+            </Form.Item>
+            
+            {/* CHECKBOX LƯU THÔNG TIN ĐĂNG NHẬP */}
+            <Form.Item name="remember" valuePropName="checked">
+              <Checkbox>Lưu thông tin đăng nhập</Checkbox>
+            </Form.Item>
+            
+            {/* NÚT SUBMIT */}
+            <Form.Item>
+              <Button type="primary" htmlType="submit" size="large" style={{width:'100%'}}>
+                Đăng Nhập
+              </Button>
+            </Form.Item>
+            
+            {/* LIÊN KẾT ĐĂNG KÝ */}
+            <Form.Item style={{textAlign: 'center', marginBottom: 0}}>
+              Chưa có tài khoản? <Link to="/dangki">Đăng ký ngay</Link>
+            </Form.Item>
+          </Form>
+        </AppCard>
+      </div>
+    </AppLayout>
   )
 }

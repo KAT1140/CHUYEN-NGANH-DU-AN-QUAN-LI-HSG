@@ -1,13 +1,13 @@
 // File: client/src/pages/Schedule.jsx
 
 import React, { useState, useEffect } from 'react'
-import { Layout, Calendar, Card, Tag, Space, Button, Modal, Form, Input, Select, DatePicker, message } from 'antd'
-import { PlusOutlined, DeleteOutlined, ReloadOutlined, EditOutlined, ClockCircleOutlined } from '@ant-design/icons'
+import { Calendar, Button, Modal, Form, Input, Select, DatePicker, message, Tooltip, Space, Tag } from 'antd'
+import { PlusOutlined, DeleteOutlined, ReloadOutlined, EditOutlined, ClockCircleOutlined, LeftOutlined, RightOutlined, InfoCircleOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useNavigate } from 'react-router-dom'
+import AppLayout from '../components/Layout/AppLayout'
+import AppCard from '../components/UI/AppCard'
 import '../styles/Dashboard.css'
-
-const { Header, Content } = Layout
 
 const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 
@@ -48,6 +48,7 @@ export default function Schedule(){
   const navigate = useNavigate();
   const [schedules, setSchedules] = useState([]);
   const [selectedDate, setSelectedDate] = useState(dayjs());
+  const [currentMonth, setCurrentMonth] = useState(dayjs()); // Thêm state cho tháng hiện tại
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [teacherSubject, setTeacherSubject] = useState(null);
@@ -85,7 +86,35 @@ export default function Schedule(){
   useEffect(() => {
     fetchSchedules();
     fetchTeacherSubject();
+    
+    // Thêm keyboard shortcuts
+    const handleKeyDown = (event) => {
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+        return; // Không xử lý khi đang nhập liệu
+      }
+      
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        goToPreviousMonth();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        goToNextMonth();
+      } else if (event.key === 'Home') {
+        event.preventDefault();
+        goToCurrentMonth();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
+
+  // Separate useEffect for month changes to avoid infinite loops
+  useEffect(() => {
+    // Có thể thêm logic load dữ liệu theo tháng ở đây nếu cần
+  }, [currentMonth]);
 
   // Lấy môn của giáo viên nếu user là teacher
   const fetchTeacherSubject = async () => {
@@ -110,6 +139,13 @@ export default function Schedule(){
     );
   };
 
+  // Tính số lượng sự kiện trong tháng hiện tại
+  const getMonthEventCount = () => {
+    return schedules.filter(schedule => 
+      dayjs(schedule.date).isSame(currentMonth, 'month')
+    ).length;
+  };
+
   const daySchedules = getSchedulesForDate(selectedDate);
 
   // --- HÀM MỞ MODAL ĐỂ THÊM ---
@@ -131,6 +167,12 @@ export default function Schedule(){
 
   // --- HÀM MỞ MODAL ĐỂ SỬA ---
   const openEditModal = (schedule) => {
+    // Kiểm tra quyền sửa: giáo viên chỉ được sửa lịch môn của mình
+    if (userRole === 'teacher' && teacherSubject && schedule.subject !== teacherSubject) {
+      message.warning(`Bạn chỉ có thể sửa lịch môn ${teacherSubject}`);
+      return;
+    }
+    
     setIsEditMode(true);
     setEditingId(schedule.id);
     form.setFieldsValue({
@@ -190,6 +232,13 @@ export default function Schedule(){
   };
 
   const handleDeleteEvent = async (id) => {
+    // Tìm schedule để kiểm tra quyền
+    const schedule = schedules.find(s => s.id === id);
+    if (userRole === 'teacher' && teacherSubject && schedule && schedule.subject !== teacherSubject) {
+      message.warning(`Bạn chỉ có thể xóa lịch môn ${teacherSubject}`);
+      return;
+    }
+    
     if (!window.confirm('Bạn có chắc chắn muốn xóa lịch này?')) return;
     try {
       message.loading({ content: 'Đang xóa...', key: 'deleteSchedule' });
@@ -216,6 +265,27 @@ export default function Schedule(){
 
   const handleDateSelect = (date) => {
     setSelectedDate(date);
+  };
+
+  // Hàm chuyển tháng trước
+  const goToPreviousMonth = () => {
+    const prevMonth = currentMonth.subtract(1, 'month');
+    setCurrentMonth(prevMonth);
+    setSelectedDate(prevMonth.startOf('month')); // Chọn ngày đầu tháng
+  };
+
+  // Hàm chuyển tháng sau
+  const goToNextMonth = () => {
+    const nextMonth = currentMonth.add(1, 'month');
+    setCurrentMonth(nextMonth);
+    setSelectedDate(nextMonth.startOf('month')); // Chọn ngày đầu tháng
+  };
+
+  // Hàm về tháng hiện tại
+  const goToCurrentMonth = () => {
+    const today = dayjs();
+    setCurrentMonth(today);
+    setSelectedDate(today);
   };
 
   const getListData = (value) => {
@@ -272,110 +342,171 @@ export default function Schedule(){
   }
 
   return (
-    <Layout className="dashboard-layout">
-      <Header style={{background: 'rgba(0,0,0,0.2)', backdropFilter: 'blur(10px)'}}>
-        <div className="dashboard-logo">HSG Management - Lịch Biểu</div>
-      </Header>
-      <Content className="dashboard-content">
-        <div className="dashboard-grid">
-          {/* Calendar */}
-          <Card className="dashboard-calendar-card">
-            <Calendar 
-              value={selectedDate}
-              onChange={handleDateSelect}
-              dateCellRender={dateCellRender}
-            />
-          </Card>
-
-          {/* Sidebar: Events for selected date */}
-          <div>
-            <Card 
-              className="dashboard-sidebar-card"
-              title={
-                <span>
-                  <ClockCircleOutlined style={{marginRight: 8}} />
-                  Lịch ngày {selectedDate.format('DD/MM/YYYY')}
+    <AppLayout 
+      title="Lịch Biểu HSG" 
+      subtitle="Quản lý lịch ôn tập và thi đấu"
+    >
+      <div className="dashboard-grid">
+        {/* Calendar */}
+        <AppCard 
+          className="dashboard-calendar-card"
+          variant="glass"
+          title={
+            <div className="dashboard-month-nav">
+              <div>
+                <span className="dashboard-month-title">
+                  Lịch tháng {currentMonth.format('MM/YYYY')}
                 </span>
-              }
-              extra={
-                <Space size="small">
-                  {canManageSchedule && (
-                    <Button 
-                      type="primary" 
-                      size="small"
-                      icon={<PlusOutlined />}
-                      onClick={openAddModal} // Sử dụng hàm mở modal mới
-                    >
-                      Thêm
-                    </Button>
-                  )}
+                <Tag color="blue" style={{ marginLeft: 12 }}>
+                  {getMonthEventCount()} sự kiện
+                </Tag>
+              </div>
+              <div className="dashboard-nav-buttons">
+                <Tooltip title="Tháng trước (←)">
                   <Button 
+                    className="dashboard-nav-button"
+                    type="text" 
+                    icon={<LeftOutlined />} 
+                    onClick={goToPreviousMonth}
+                  />
+                </Tooltip>
+                <Tooltip title="Về tháng hiện tại (Home)">
+                  <Button 
+                    className="dashboard-nav-button dashboard-today-button"
+                    type="primary"
+                    onClick={goToCurrentMonth}
                     size="small"
-                    icon={<ReloadOutlined />} 
-                    onClick={fetchSchedules} 
-                    loading={loading}
                   >
-                    Làm mới
+                    Hôm nay
                   </Button>
-                </Space>
+                </Tooltip>
+                <Tooltip title="Tháng sau (→)">
+                  <Button 
+                    className="dashboard-nav-button"
+                    type="text" 
+                    icon={<RightOutlined />} 
+                    onClick={goToNextMonth}
+                  />
+                </Tooltip>
+                <Tooltip title="Phím tắt: ← → để chuyển tháng, Home để về hôm nay">
+                  <Button 
+                    className="dashboard-nav-button"
+                    type="text" 
+                    icon={<InfoCircleOutlined />} 
+                    style={{ color: '#999' }}
+                  />
+                </Tooltip>
+              </div>
+            </div>
+          }
+        >
+          <Calendar 
+            value={selectedDate}
+            onChange={handleDateSelect}
+            dateCellRender={dateCellRender}
+            headerRender={() => null} // Ẩn header mặc định của Calendar
+            mode="month"
+            onPanelChange={(date, mode) => {
+              if (mode === 'month') {
+                setCurrentMonth(date);
               }
-            >
-              {daySchedules.length === 0 ? (
-                <p style={{color:'#999'}}>Không có lịch</p>
-              ) : (
-                <Space direction="vertical" style={{width:'100%', gap: 12}}>
-                  {daySchedules.map(schedule => (
-                    <Card 
-                      key={schedule.id} 
-                      className="dashboard-schedule-card"
-                      size="small"
-                      style={{
-                        borderLeftColor: schedule.subject ? getSubjectColor(schedule.subject) : '#1890ff'
-                      }}
-                      extra={
-                        // Chỉ hiện nút Sửa/Xóa nếu có quyền
-                        canManageSchedule && (
-                          <Space size="small">
-                            {/* Nút Sửa */}
-                            <Button 
-                              type="text"
-                              size="small"
-                              icon={<EditOutlined />}
-                              onClick={() => openEditModal(schedule)}
-                              style={{ color: '#1890ff' }}
-                            />
-                            {/* Nút Xóa */}
-                            <Button 
-                              type="text" 
-                              size="small" 
-                              icon={<DeleteOutlined />}
-                              onClick={() => handleDeleteEvent(schedule.id)}
-                              danger
-                            />
-                          </Space>
-                        )
-                      }
-                    >
-                      <div style={{marginBottom: 8}}>
-                        <span className="dashboard-schedule-time">
-                          <ClockCircleOutlined style={{marginRight: 4}} />
-                          {schedule.time ? schedule.time.slice(0, 5) : '09:00'}
-                        </span>
-                        <span style={{marginLeft: 8, fontSize: 14, fontWeight: 500}}>{schedule.title}</span>
-                      </div>
-                      {schedule.description && <div className="dashboard-schedule-desc">{schedule.description}</div>}
-                      {schedule.subject && (
-                        <Tag color={getSubjectColor(schedule.subject)} style={{marginTop: 8}}>
-                          {schedule.subject}
-                        </Tag>
-                      )}
-                    </Card>
-                  ))}
-                </Space>
-              )}
-            </Card>
-          </div>
+            }}
+          />
+        </AppCard>
+
+        {/* Sidebar: Events for selected date */}
+        <div>
+          <AppCard 
+            className="dashboard-sidebar-card"
+            variant="glass"
+            title={
+              <span>
+                <ClockCircleOutlined style={{marginRight: 8}} />
+                Lịch ngày {selectedDate.format('DD/MM/YYYY')}
+              </span>
+            }
+            extra={
+              <Space size="small">
+                {canManageSchedule && (
+                  <Button 
+                    type="primary" 
+                    size="small"
+                    icon={<PlusOutlined />}
+                    onClick={openAddModal} // Sử dụng hàm mở modal mới
+                  >
+                    Thêm
+                  </Button>
+                )}
+                <Button 
+                  size="small"
+                  icon={<ReloadOutlined />} 
+                  onClick={fetchSchedules} 
+                  loading={loading}
+                >
+                  Làm mới
+                </Button>
+              </Space>
+            }
+          >
+            {daySchedules.length === 0 ? (
+              <div className="dashboard-empty">
+                Không có lịch
+              </div>
+            ) : (
+              <Space direction="vertical" style={{width:'100%', gap: 12}}>
+                {daySchedules.map(schedule => (
+                  <AppCard 
+                    key={schedule.id} 
+                    className="dashboard-schedule-card"
+                    size="small"
+                    hoverable={false}
+                    style={{
+                      borderLeftColor: schedule.subject ? getSubjectColor(schedule.subject) : '#1890ff'
+                    }}
+                    extra={
+                      // Chỉ hiện nút Sửa/Xóa nếu có quyền và (admin hoặc giáo viên môn đúng)
+                      canManageSchedule && (userRole === 'admin' || (userRole === 'teacher' && teacherSubject === schedule.subject)) && (
+                        <Space size="small">
+                          {/* Nút Sửa */}
+                          <Button 
+                            type="text"
+                            size="small"
+                            icon={<EditOutlined />}
+                            onClick={() => openEditModal(schedule)}
+                            style={{ color: '#1890ff' }}
+                          />
+                          {/* Nút Xóa */}
+                          <Button 
+                            type="text" 
+                            size="small" 
+                            icon={<DeleteOutlined />}
+                            onClick={() => handleDeleteEvent(schedule.id)}
+                            danger
+                          />
+                        </Space>
+                      )
+                    }
+                  >
+                    <div style={{marginBottom: 8}}>
+                      <span className="dashboard-schedule-time">
+                        <ClockCircleOutlined style={{marginRight: 4}} />
+                        {schedule.time ? schedule.time.slice(0, 5) : '09:00'}
+                      </span>
+                      <span style={{marginLeft: 8, fontSize: 14, fontWeight: 500}}>{schedule.title}</span>
+                    </div>
+                    {schedule.description && <div className="dashboard-schedule-desc">{schedule.description}</div>}
+                    {schedule.subject && (
+                      <Tag color={getSubjectColor(schedule.subject)} style={{marginTop: 8}}>
+                        {schedule.subject}
+                      </Tag>
+                    )}
+                  </AppCard>
+                ))}
+              </Space>
+            )}
+          </AppCard>
         </div>
+      </div>
 
         {/* Modal Thêm/Sửa sự kiện */}
         <Modal
@@ -422,21 +553,25 @@ export default function Schedule(){
             <Form.Item 
               name="subject" 
               label="Môn học"
+              rules={userRole === 'teacher' ? [{required: true, message: 'Môn học là bắt buộc'}] : []}
             >
               <Select 
-                placeholder="Chọn môn (tuỳ chọn)"
-                allowClear
-                disabled={userRole === 'teacher' && teacherSubject !== null}
-                options={[
-                  {label:'Toán', value:'Toán'},
-                  {label:'Lý', value:'Lý'},
-                  {label:'Hóa', value:'Hóa'},
-                  {label:'Sinh', value:'Sinh'},
-                  {label:'Văn', value:'Văn'},
-                  {label:'Anh', value:'Anh'},
-                  {label:'Địa', value:'Địa'},
-                  {label:'Lịch sử', value:'Lịch sử'}
-                ]} 
+                placeholder={userRole === 'teacher' ? `Môn của bạn: ${teacherSubject || 'Đang tải...'}` : "Chọn môn (tuỳ chọn)"}
+                allowClear={userRole !== 'teacher'}
+                disabled={userRole === 'teacher'}
+                options={userRole === 'teacher' && teacherSubject ? 
+                  [{label: teacherSubject, value: teacherSubject}] :
+                  [
+                    {label:'Toán', value:'Toán'},
+                    {label:'Lý', value:'Lý'},
+                    {label:'Hóa', value:'Hóa'},
+                    {label:'Sinh', value:'Sinh'},
+                    {label:'Văn', value:'Văn'},
+                    {label:'Anh', value:'Anh'},
+                    {label:'Địa', value:'Địa'},
+                    {label:'Lịch sử', value:'Lịch sử'}
+                  ]
+                } 
               />
             </Form.Item>
 
@@ -447,7 +582,6 @@ export default function Schedule(){
             </Form.Item>
           </Form>
         </Modal>
-      </Content>
-    </Layout>
-  )
-}
+      </AppLayout>
+    )
+  }

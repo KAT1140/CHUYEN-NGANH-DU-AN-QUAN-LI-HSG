@@ -1,125 +1,58 @@
 // File: src/controllers/scoreController.js
 
 const Score = require('../models/Score');
-const Student = require('../models/Student');
+const Student = require('../models/student');
 const User = require('../models/User');
 const Team = require('../models/Team');
-const Teacher = require('../models/Teacher');
-const { Op } = require('sequelize'); // Import Op để dùng toán tử tìm kiếm
+const Teacher = require('../models/teacher');
+const { Op } = require('sequelize');
 
 // Get scores (Phân quyền: User chỉ xem của mình, Teacher xem môn của mình, Admin xem hết)
 exports.getAll = async (req, res) => {
   try {
-    const { id, role } = req.user; // Lấy ID và Role từ token đăng nhập
+    const { id, role } = req.user;
     let whereClause = {};
     let include = [
-      { model: Student, as: 'member', include: [{ model: Team, as: 'team' }] },
-      { model: User, as: 'teacher', attributes: ['id', 'name', 'email'] }
+      { 
+        model: Student, 
+        as: 'member', 
+        include: [{ 
+          model: Team, 
+          as: 'team'
+        }] 
+      },
+      { 
+        model: User, 
+        as: 'creator', 
+        attributes: ['id', 'name', 'email'] 
+      }
     ];
 
-    // LOGIC PHÂN QUYỀN TẠI ĐÂY
-    if (role === 'user') {
-      // Học sinh xem điểm: 
-      // - Tiền bối (năm trước): xem tất cả
-      // - Cùng khóa (năm hiện tại): chỉ xem người có giải (điểm >= 8)
-      const currentYear = new Date().getFullYear();
-      
-      // Lấy tất cả điểm, sau đó filter ở JavaScript
-      whereClause = {};
-      
-      // Fetch all scores first
-      const allScores = await Score.findAll({
-        where: whereClause,
-        include,
-        order: [['createdAt', 'DESC']]
+    if (role === 'student') {
+      // Học sinh xem điểm của mình + điểm HSG các năm trước của môn mình
+      const student = await Student.findOne({ 
+        where: { userId: id },
+        include: [{ model: Team, as: 'team' }]
       });
       
-      // Filter: 
-      // - Năm trước: chỉ xem điểm thi HSG chính thức
-      // - Năm hiện tại: xem tất cả (HSG + điểm ôn), nhưng chỉ người có giải (>= 80%)
-      const filteredScores = allScores.filter(score => {
-        const scoreYear = new Date(score.createdAt).getFullYear();
-        if (scoreYear < currentYear) {
-          // Tiền bối: chỉ xem điểm thi HSG chính thức
-          return score.testName && score.testName.includes('Kỳ thi HSG');
-        } else {
-          // Cùng khóa: xem tất cả (HSG + ôn tập), nhưng chỉ người có giải (điểm >= 8/10)
-          const percentage = (score.score / score.maxScore) * 100;
-          return percentage >= 80; // >= 80% = có giải
-        }
-      });
-      
-      // Lấy thông tin giáo viên bộ môn cho các điểm đã lọc
-      const subjects = [...new Set(filteredScores.map(s => s.member?.team?.subject).filter(Boolean))];
-      const subjectTeachers = await Teacher.findAll({
-        where: { subject: subjects }
-      });
-      
-      // Lấy userId của các giáo viên
-      const teacherUserIds = subjectTeachers.map(t => t.userId).filter(Boolean);
-      const teacherUsers = await User.findAll({
-        where: { id: teacherUserIds },
-        attributes: ['id', 'name', 'email']
-      });
-      
-      const userMap = {};
-      teacherUsers.forEach(u => {
-        userMap[u.id] = u;
-      });
-      
-      const teacherMap = {};
-      subjectTeachers.forEach(t => {
-        if (t.userId && userMap[t.userId]) {
-          teacherMap[t.subject] = {
-            name: userMap[t.userId].name,
-            email: userMap[t.userId].email
-          };
-        } else {
-          teacherMap[t.subject] = {
-            name: t.fullName,
-            email: t.email || 'N/A'
-          };
-        }
-      });
-      
-      // Gắn thông tin giáo viên bộ môn vào mỗi điểm
-      const scoresWithSubjectTeacher = filteredScores.map(score => {
-        const scoreData = score.toJSON();
-        const subject = scoreData.member?.team?.subject;
-        if (subject && teacherMap[subject]) {
-          scoreData.subjectTeacher = teacherMap[subject];
-        } else {
-          scoreData.subjectTeacher = { name: 'N/A', email: 'N/A' };
-        }
-        return scoreData;
-      });
-      
-      return res.json({ scores: scoresWithSubjectTeacher });
+      if (!student) {
+        return res.json({ scores: [] });
+      }
+
+      // Điều kiện: điểm của học sinh này HOẶC điểm HSG cấp tỉnh của môn mình (các năm trước)
+      whereClause = {
+        [Op.or]: [
+          { memberId: student.id }, // Điểm của mình
+          {
+            // Điểm HSG cấp tỉnh của môn mình (các năm trước)
+            testName: 'HSG cấp tỉnh',
+            '$member.team.subject$': student.team?.subject || null
+          }
+        ]
+      };
     } else if (role === 'teacher') {
-      // Teacher chỉ xem điểm của học sinh trong đội môn mình
-      const teacher = await Teacher.findOne({ where: { userId: id } });
-      
-      if (!teacher || !teacher.subject) {
-        return res.json({ scores: [] });
-      }
-
-      // Tìm tất cả học sinh trong các đội môn này
-      const students = await Student.findAll({
-        include: [{
-          model: Team,
-          as: 'team',
-          where: { subject: teacher.subject }
-        }],
-        attributes: ['id']
-      });
-
-      const studentIds = students.map(s => s.id);
-      
-      if (studentIds.length === 0) {
-        return res.json({ scores: [] });
-      }
-
-      whereClause = { memberId: studentIds };
+      // Teacher: Xem tất cả điểm (để tham khảo) nhưng chỉ quản lý môn mình
+      // Không cần lọc ở đây, sẽ lọc ở phần create/update/delete
     }
     // Admin: whereClause rỗng -> Lấy tất cả
 
@@ -129,66 +62,21 @@ exports.getAll = async (req, res) => {
       order: [['createdAt', 'DESC']]
     });
     
-    // Lấy thông tin giáo viên bộ môn cho mỗi điểm
-    const subjects = [...new Set(scores.map(s => s.member?.team?.subject).filter(Boolean))];
-    const subjectTeachers = await Teacher.findAll({
-      where: { subject: subjects }
-    });
-    
-    // Lấy userId của các giáo viên
-    const teacherUserIds = subjectTeachers.map(t => t.userId).filter(Boolean);
-    const teacherUsers = await User.findAll({
-      where: { id: teacherUserIds },
-      attributes: ['id', 'name', 'email']
-    });
-    
-    const userMap = {};
-    teacherUsers.forEach(u => {
-      userMap[u.id] = u;
-    });
-    
-    const teacherMap = {};
-    subjectTeachers.forEach(t => {
-      if (t.userId && userMap[t.userId]) {
-        teacherMap[t.subject] = {
-          name: userMap[t.userId].name,
-          email: userMap[t.userId].email
-        };
-      } else {
-        teacherMap[t.subject] = {
-          name: t.fullName,
-          email: t.email || 'N/A'
-        };
-      }
-    });
-    
-    // Gắn thông tin giáo viên bộ môn vào mỗi điểm
-    const scoresWithSubjectTeacher = scores.map(score => {
-      const scoreData = score.toJSON();
-      const subject = scoreData.member?.team?.subject;
-      if (subject && teacherMap[subject]) {
-        scoreData.subjectTeacher = teacherMap[subject];
-      } else {
-        scoreData.subjectTeacher = { name: 'N/A', email: 'N/A' };
-      }
-      return scoreData;
-    });
-    
-    res.json({ scores: scoresWithSubjectTeacher });
+    res.json({ scores });
   } catch (err) {
     console.error('Error getAll scores:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Get scores by member (Giữ nguyên, nhưng thêm kiểm tra bảo mật nếu kỹ hơn)
+// Get scores by member
 exports.getByMember = async (req, res) => {
   try {
     const { memberId } = req.params;
     const scores = await Score.findAll({
       where: { memberId },
       include: [
-        { model: User, as: 'teacher', attributes: ['id', 'name', 'email'] }
+        { model: User, as: 'creator', attributes: ['id', 'name', 'email'] }
       ],
       order: [['examDate', 'DESC']]
     });
@@ -217,7 +105,7 @@ exports.create = async (req, res) => {
       return res.status(404).json({ error: 'Học sinh không tồn tại' });
     }
 
-    // Nếu là giáo viên, kiểm tra quyền (chỉ được nhập điểm cho học sinh trong đội môn của mình)
+    // Nếu là giáo viên, kiểm tra quyền
     if (req.user.role === 'teacher') {
       const teacher = await Teacher.findOne({ where: { userId: req.user.id } });
       
@@ -236,16 +124,36 @@ exports.create = async (req, res) => {
       memberId,
       testName,
       score,
-      maxScore: maxScore || 10,
+      maxScore: maxScore || (testName === 'HSG cấp tỉnh' ? 20 : 10),
       examDate,
       notes,
       createdBy: req.user.id
     });
 
+    // Tự động tính giải thưởng cho HSG cấp tỉnh
+    if (testName === 'HSG cấp tỉnh') {
+      const percentage = (score / (maxScore || 20)) * 100;
+      let award = null;
+      
+      if (percentage >= 90) {
+        award = 'Giải Nhất';
+      } else if (percentage >= 80) {
+        award = 'Giải Nhì';
+      } else if (percentage >= 70) {
+        award = 'Giải Ba';
+      } else if (percentage >= 60) {
+        award = 'Giải Khuyến khích';
+      }
+      
+      if (award) {
+        await newScore.update({ award });
+      }
+    }
+
     const scoreWithRelations = await Score.findByPk(newScore.id, {
       include: [
         { model: Student, as: 'member' },
-        { model: User, as: 'teacher', attributes: ['id', 'name', 'email'] }
+        { model: User, as: 'creator', attributes: ['id', 'name', 'email'] }
       ]
     });
 
@@ -270,7 +178,7 @@ exports.update = async (req, res) => {
       return res.status(404).json({ error: 'Score not found' });
     }
 
-    // Kiểm tra quyền: Giáo viên chỉ sửa điểm của học sinh trong đội môn mình
+    // Kiểm tra quyền
     if (req.user.role === 'teacher') {
       const teacher = await Teacher.findOne({ where: { userId: req.user.id } });
       
@@ -293,10 +201,32 @@ exports.update = async (req, res) => {
       notes: notes !== undefined ? notes : scoreRecord.notes
     });
 
+    // Tự động tính lại giải thưởng cho HSG cấp tỉnh
+    const finalTestName = testName || scoreRecord.testName;
+    const finalScore = score !== undefined ? score : scoreRecord.score;
+    const finalMaxScore = maxScore || scoreRecord.maxScore;
+    
+    if (finalTestName === 'HSG cấp tỉnh') {
+      const percentage = (finalScore / finalMaxScore) * 100;
+      let award = null;
+      
+      if (percentage >= 90) {
+        award = 'Giải Nhất';
+      } else if (percentage >= 80) {
+        award = 'Giải Nhì';
+      } else if (percentage >= 70) {
+        award = 'Giải Ba';
+      } else if (percentage >= 60) {
+        award = 'Giải Khuyến khích';
+      }
+      
+      await scoreRecord.update({ award });
+    }
+
     const updated = await Score.findByPk(id, {
       include: [
         { model: Student, as: 'member' },
-        { model: User, as: 'teacher', attributes: ['id', 'name', 'email'] }
+        { model: User, as: 'creator', attributes: ['id', 'name', 'email'] }
       ]
     });
 
@@ -320,7 +250,7 @@ exports.delete = async (req, res) => {
       return res.status(404).json({ error: 'Score not found' });
     }
 
-    // Kiểm tra quyền: Giáo viên chỉ xóa điểm của học sinh trong đội môn mình
+    // Kiểm tra quyền
     if (req.user.role === 'teacher') {
       const teacher = await Teacher.findOne({ where: { userId: req.user.id } });
       

@@ -2,8 +2,8 @@
 
 const Schedule = require('../models/Schedule');
 const User = require('../models/User');
-const Teacher = require('../models/Teacher');
-const Student = require('../models/Student');
+const Teacher = require('../models/teacher');
+const Student = require('../models/student');
 const Team = require('../models/Team');
 const { Op } = require('sequelize');
 
@@ -71,6 +71,22 @@ exports.create = async (req, res) => {
   try {
     const { title, description, date, time, type, subject } = req.body;
     const userId = req.user.id;
+    const userRole = req.user.role;
+
+    // Nếu là giáo viên, kiểm tra môn học
+    if (userRole === 'teacher') {
+      const teacher = await Teacher.findOne({ where: { userId } });
+      if (!teacher) {
+        return res.status(403).json({ error: 'Không tìm thấy thông tin giáo viên' });
+      }
+      
+      // Giáo viên chỉ được tạo lịch cho môn của mình
+      if (!subject || subject !== teacher.subject) {
+        return res.status(403).json({ 
+          error: `Bạn chỉ có thể tạo lịch cho môn ${teacher.subject}` 
+        });
+      }
+    }
 
     const schedule = await Schedule.create({
       title,
@@ -111,6 +127,28 @@ exports.update = async (req, res) => {
       return res.status(403).json({ error: 'Bạn không có quyền sửa lịch này' });
     }
 
+    // Nếu là giáo viên, kiểm tra môn học
+    if (role === 'teacher') {
+      const teacher = await Teacher.findOne({ where: { userId } });
+      if (!teacher) {
+        return res.status(403).json({ error: 'Không tìm thấy thông tin giáo viên' });
+      }
+      
+      // Giáo viên chỉ được sửa lịch môn của mình
+      if (schedule.subject !== teacher.subject) {
+        return res.status(403).json({ 
+          error: `Bạn chỉ có thể sửa lịch môn ${teacher.subject}` 
+        });
+      }
+      
+      // Đảm bảo không thay đổi môn học
+      if (subject && subject !== teacher.subject) {
+        return res.status(403).json({ 
+          error: `Bạn chỉ có thể tạo lịch cho môn ${teacher.subject}` 
+        });
+      }
+    }
+
     await schedule.update({ title, description, date, time, type, subject });
 
     res.json({ 
@@ -136,6 +174,21 @@ exports.delete = async (req, res) => {
     // Chỉ admin, teacher hoặc người tạo mới được xóa
     if (role !== 'admin' && role !== 'teacher' && schedule.createdBy !== userId) {
       return res.status(403).json({ error: 'Bạn không có quyền xóa lịch này' });
+    }
+
+    // Nếu là giáo viên, kiểm tra môn học
+    if (role === 'teacher') {
+      const teacher = await Teacher.findOne({ where: { userId } });
+      if (!teacher) {
+        return res.status(403).json({ error: 'Không tìm thấy thông tin giáo viên' });
+      }
+      
+      // Giáo viên chỉ được xóa lịch môn của mình
+      if (schedule.subject !== teacher.subject) {
+        return res.status(403).json({ 
+          error: `Bạn chỉ có thể xóa lịch môn ${teacher.subject}` 
+        });
+      }
     }
 
     await schedule.destroy();

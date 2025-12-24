@@ -1,18 +1,45 @@
 // File: src/controllers/studentController.js
 const User = require('../models/User');
-const Student = require('../models/Student');
+const Student = require('../models/student');
 const bcrypt = require('bcryptjs');
 const { Op } = require('sequelize');
 
-// Lấy danh sách tất cả học sinh (User có role = 'user')
+// Lấy danh sách tất cả học sinh (join Student + User)
 exports.getAll = async (req, res) => {
   try {
-    const students = await User.findAll({
-      where: { role: 'user' },
-      attributes: { exclude: ['password'] }, // Không trả về mật khẩu
-      order: [['createdAt', 'DESC']]
+    let where = {};
+    // Nếu là giáo viên thì chỉ lấy học sinh thuộc team mà giáo viên phụ trách
+    // Giáo viên được xem tất cả học sinh, không lọc theo team nữa
+    let teamIncludeWhere = undefined;
+    const Team = require('../models/Team');
+    const students = await Student.findAll({
+      where,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: { exclude: ['password'] }
+        },
+        {
+          model: Team,
+          as: 'team',
+          attributes: ['id', 'name', 'teacherId'],
+          required: false
+        }
+      ],
+      order: [['studentId', 'ASC']]
     });
-    res.json({ students });
+    // Định dạng lại dữ liệu cho frontend
+    const result = students.map(s => ({
+      id: s.user ? s.user.id : null,
+      name: s.name,
+      studentId: s.studentId,
+      grade: s.grade,
+      className: s.className,
+      email: s.user ? s.user.email : '',
+      createdAt: s.user ? s.user.createdAt : '',
+    }));
+    res.json({ students: result });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

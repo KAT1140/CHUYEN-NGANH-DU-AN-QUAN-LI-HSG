@@ -3,10 +3,13 @@ import React, { useState, useEffect } from 'react'
 import { Table, Button, Modal, Form, Input, Space, message, Tag } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
 import { getAllStudents, createStudent, updateStudent, deleteStudent } from '../utils/api'
+import AppLayout from '../components/Layout/AppLayout'
+import AppCard from '../components/UI/AppCard'
 
 export default function Students() {
   const [students, setStudents] = useState([])
   const [loading, setLoading] = useState(false)
+  const [searchText, setSearchText] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false)
   const [editingId, setEditingId] = useState(null)
   const [form] = Form.useForm()
@@ -84,15 +87,22 @@ export default function Students() {
 
   const columns = [
     { title: 'ID', dataIndex: 'id', width: 60 },
+    {
+      title: 'Mã số',
+      dataIndex: 'studentId',
+      key: 'studentId',
+      render: (text) => <Tag color="blue">{text}</Tag>,
+      sorter: (a, b) => {
+        const idA = a.studentId || '';
+        const idB = b.studentId || '';
+        return idA.localeCompare(idB, 'vi', { numeric: true });
+      },
+      defaultSortOrder: 'ascend'
+    },
     { 
       title: 'Họ và Tên', 
       dataIndex: 'name',
       render: (text) => <b>{text}</b>
-    },
-    { 
-      title: 'Mã số / Email', 
-      dataIndex: 'email',
-      render: (text) => <Tag color="blue">{text}</Tag>
     },
     { title: 'Ngày tạo', dataIndex: 'createdAt', render: (d) => new Date(d).toLocaleDateString('vi-VN') },
     {
@@ -107,22 +117,72 @@ export default function Students() {
     }
   ];
 
-  if (userRole === 'user') return <div style={{padding:20}}>Bạn không có quyền truy cập trang này.</div>;
+  if (userRole === 'user') {
+    return (
+      <AppLayout title="Không có quyền truy cập">
+        <AppCard>
+          <div style={{padding:20, textAlign: 'center'}}>
+            Bạn không có quyền truy cập trang này.
+          </div>
+        </AppCard>
+      </AppLayout>
+    );
+  }
+
+  // Lọc học sinh theo tên hoặc mã số
+  const filteredStudents = students.filter(s => {
+    const search = searchText.trim().toLowerCase();
+    if (!search) return true;
+    return (
+      (s.name && s.name.toLowerCase().includes(search)) ||
+      (s.studentId && s.studentId.toLowerCase().includes(search))
+    );
+  });
 
   return (
-    <div>
-      <Space style={{ marginBottom: 16 }}>
-        <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>Thêm học sinh</Button>
-        <Button icon={<ReloadOutlined />} onClick={fetchStudents}>Làm mới</Button>
-      </Space>
+    <AppLayout 
+      title="Quản lý Học sinh" 
+      subtitle="Danh sách và thông tin học sinh trong hệ thống"
+    >
+      <AppCard 
+        title="Danh sách học sinh"
+        variant="glass"
+        extra={
+          <Space>
+            <Button type="primary" icon={<PlusOutlined />} onClick={openAdd}>
+              Thêm học sinh
+            </Button>
+            <Button icon={<ReloadOutlined />} onClick={fetchStudents}>
+              Làm mới
+            </Button>
+          </Space>
+        }
+      >
+        {/* Search Section */}
+        <div style={{ marginBottom: 24 }}>
+          <Input.Search
+            allowClear
+            placeholder="Tìm kiếm theo tên hoặc mã số"
+            value={searchText}
+            onChange={e => setSearchText(e.target.value)}
+            style={{ width: 300 }}
+          />
+        </div>
 
-      <Table 
-        dataSource={students} 
-        columns={columns} 
-        rowKey="id" 
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-      />
+        <Table 
+          dataSource={filteredStudents} 
+          columns={columns} 
+          rowKey="id" 
+          loading={loading}
+          pagination={{ 
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} học sinh`
+          }}
+          scroll={{ x: 800 }}
+        />
+      </AppCard>
 
       <Modal
         title={editingId ? "Cập nhật thông tin học sinh" : "Thêm học sinh mới"}
@@ -160,6 +220,6 @@ export default function Students() {
           </Button>
         </Form>
       </Modal>
-    </div>
+    </AppLayout>
   )
 }

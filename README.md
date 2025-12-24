@@ -2,7 +2,7 @@
 
 # 🏆 Hệ thống Quản lý Đội tuyển HSG
 
-### Nền tảng quản lý toàn diện cho Đội tuyển Học sinh Giỏi
+### Nền tảng quản lý toàn diện cho Đội tuyển Học sinh Giỏi với UI hiện đại
 
 [![Node.js](https://img.shields.io/badge/Node.js-v22.14.0-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://reactjs.org/)
@@ -11,7 +11,7 @@
 [![Express](https://img.shields.io/badge/Express-4.x-000000?style=for-the-badge&logo=express&logoColor=white)](https://expressjs.com/)
 [![Ant Design](https://img.shields.io/badge/Ant_Design-5.x-0170FE?style=for-the-badge&logo=ant-design&logoColor=white)](https://ant.design/)
 
-[Tính năng](#-tính-năng) • [Cài đặt](#-cài-đặt--chạy) • [Công nghệ](#-công-nghệ-sử-dụng) • [Cấu trúc](#-cấu-trúc-project)
+[Tính năng](#-tính-năng) • [Cài đặt nhanh](#-cài-đặt-nhanh) • [Công nghệ](#-công-nghệ-sử-dụng) • [Cấu trúc](#-cấu-trúc-project)
 
 </div>
 
@@ -19,24 +19,45 @@
 
 ## 📖 Giới thiệu
 
-**Hệ thống Quản lý Đội tuyển HSG** là một ứng dụng web fullstack được xây dựng để hỗ trợ quản lý hiệu quả các hoạt động của Đội tuyển Học sinh Giỏi tại các trường THPT. Hệ thống cung cấp các tính năng toàn diện từ quản lý học sinh, đội tuyển, lịch học, chấm điểm đến thống kê và đánh giá.
+**Hệ thống Quản lý Đội tuyển HSG** là một ứng dụng web fullstack được xây dựng để hỗ trợ quản lý hiệu quả các hoạt động của Đội tuyển Học sinh Giỏi tại các trường THPT. Hệ thống cung cấp các tính năng toàn diện từ quản lý học sinh, giáo viên, đội tuyển, lịch học, chấm điểm đến thống kê và đánh giá.
 
 ### ✨ Điểm nổi bật
 
-- 🎯 **Dashboard thống kê trực quan**: Hiển thị tổng quan về đội tuyển, học sinh, lịch học tuần và đếm ngược kỳ thi HSG
-- 📅 **Quản lý lịch học thông minh**: Calendar view với color-coding theo môn học, phân quyền xem/thêm lịch theo vai trò
+- � **DUI hiện đại với Glass Morphism**: Giao diện đẹp mắt với hiệu ứng kính mờ, gradient backgrounds và animations mượt mà
+- 🎯 **Dashboard thống kê trực quan**: Hiển thị tổng quan về đội tuyển, học sinh, giáo viên và lịch học tuần
+- � **Quản  lý lịch học thông minh**: Calendar view với màu sắc phân biệt, navigation tháng, keyboard shortcuts
 - 👥 **Quản lý đa cấp**: Hỗ trợ 3 vai trò (Admin, Giáo viên, Học sinh) với quyền hạn riêng biệt
-- 🎨 **Giao diện hiện đại**: UI responsive với Ant Design, gradient backgrounds và animations mượt mà
 - 📊 **Thống kê & báo cáo**: Biểu đồ phân tích điểm số, xếp hạng học sinh theo năm học
-- 🔐 **Bảo mật cao**: JWT authentication, middleware phân quyền, mã hóa mật khẩu
+- 🔐 **Bảo mật cao**: JWT authentication, middleware phân quyền, mã hóa mật khẩu bcrypt
+- 📱 **Responsive Design**: Tương thích hoàn hảo trên desktop, tablet và mobile
+
+## � UIh/UX Features
+
+### 🌟 Modern Design System
+- **Glass Morphism**: Translucent cards với backdrop blur effects
+- **Gradient Backgrounds**: Beautiful color gradients throughout the app
+- **Smooth Animations**: Fade-in, slide-in, và hover effects
+- **Consistent Typography**: Unified font system và sizing
+- **Theme Variables**: Centralized color management với CSS variables
+
+### 📱 Responsive Components
+- **AppLayout**: Modern layout với gradient header và glass morphism
+- **AppCard**: Flexible card component với multiple variants (default, glass, gradient, stats)
+- **Mobile-First**: Optimized cho tất cả screen sizes
+- **Touch-Friendly**: Large buttons và touch targets cho mobile users
+
+### 🎯 Enhanced User Experience
+- **Intuitive Navigation**: Clear menu structure và breadcrumbs
+- **Loading States**: Smooth loading animations và skeleton screens
+- **Error Handling**: User-friendly error messages và recovery options
+- **Keyboard Shortcuts**: Power user features với keyboard navigation
 
 ### 🎓 Phạm vi quản lý
-
-- **8 môn học**: Toán, Lý, Hóa, Sinh, Văn, Anh, Địa, Lịch sử
-- **3 khối lớp**: 10, 11, 12
+- **3 khối lớp**: 10, 11, 12 (27 đội tuyển tổng cộng)
+- **Đầy đủ dữ liệu**: 1 Admin + 27 Giáo viên + 91 Học sinh + 27 Teams
 - **Phân quyền chi tiết**: 
   - **Admin**: Toàn quyền quản lý hệ thống
-  - **Giáo viên**: Quản lý lịch học & điểm số môn giảng dạy
+  - **Giáo viên**: Quản lý đội phụ trách, lịch học & điểm số
   - **Học sinh**: Xem lịch học & điểm số cá nhân
 
 ## � Tech Stack
@@ -72,197 +93,348 @@
 ```
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │    User     │────▶│   Teacher   │     │   Student   │
-│  (3 roles)  │     │  (subject)  │     │ (year,team) │
-└─────────────┘     └─────────────┘     └──────┬──────┘
-                                                │
-                    ┌─────────────┐            │
-                    │    Team     │◀───────────┘
-                    │(subject,gr) │
-                    └──────┬──────┘
+│  (3 roles)  │     │(specialization)│   │(grade,team) │
+└─────────────┘     └──────┬──────┘     └──────┬──────┘
+                           │                   │
+                           ▼                   ▼
+                    ┌─────────────┐     ┌─────────────┐
+                    │    Team     │◀────│  TeamMember │
+                    │(subject,gr) │     │  (linkage)  │
+                    └──────┬──────┘     └─────────────┘
                            │
        ┌───────────────────┼───────────────────┐
        ▼                   ▼                   ▼
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │  Schedule   │     │    Score    │     │ Evaluation  │
-│(subject,dt) │     │(score,max=10)│     │  (rating)   │
+│(subject,dt) │     │(score,max=10)│     │(rating 1-10)│
 └─────────────┘     └─────────────┘     └─────────────┘
 ```
 
 ## 🎯 Tính năng
 
 ### 🏠 Dashboard & Thống kê
-- ✅ 4 thẻ thống kê: Tổng đội, Tổng học sinh, Lịch tuần, Đếm ngược kỳ thi
+- ✅ 4 thẻ thống kê: Tổng đội, Tổng học sinh, Tổng giáo viên, Lịch tuần
 - ✅ Biểu đồ phân tích điểm trung bình theo môn
 - ✅ Bảng xếp hạng học sinh xuất sắc
 - ✅ So sánh hiệu suất giữa các đội
 
 ### 📅 Quản lý Lịch học
-- ✅ Calendar view với màu sắc phân biệt 8 môn học
+- ✅ Navigation tháng với nút Previous/Next/Today
 - ✅ Thêm/sửa/xóa lịch học với date picker
-- ✅ Giáo viên: Quản lý lịch môn giảng dạy (subject auto-fill)
+- ✅ Giáo viên: Quản lý lịch môn giảng dạy
 - ✅ Học sinh: Xem lịch học môn của đội
-- ✅ Hiển thị tối đa 2 lịch/ngày, có indicator "+X lịch"
-- ✅ Hover effects và gradient card design
+- ✅ Hiển thị số lượng sự kiện mỗi tháng
 
-### 🎯 Quản lý Điểm số
-- ✅ Thêm/sửa/xóa điểm thi cho học sinh
-- ✅ Hệ thống điểm 10 (0-10, step 0.1)
-- ✅ Tìm kiếm theo: Học sinh, Đội, Tên bài thi
-- ✅ Ghi chú chi tiết cho từng điểm
-- ✅ Lưu ngày thi và metadata
+### 👨‍🏫 Quản lý Giáo viên
+- ✅ CRUD đầy đủ cho giáo viên (Admin only)
+- ✅ Hiển thị môn dạy với color-coded tags
+- ✅ Cột "Đội phụ trách" với thông tin team
+- ✅ Chuyên môn chi tiết (VD: "Đại số, Hình học, Giải tích")
+- ✅ Tổ môn và thông tin liên hệ
+- ✅ Tự động tạo User account khi thêm giáo viên
 
-### 👥 Quản lý Học sinh & Đội
+### 👨‍🎓 Quản lý Học sinh & Đội
 - ✅ CRUD đầy đủ cho học sinh
 - ✅ Phân đội theo môn và khối (10/11/12)
 - ✅ Liên kết với tài khoản User
-- ✅ Theo dõi năm học hiện tại/đã tốt nghiệp
-- ✅ 24 đội tuyển (8 môn × 3 khối)
+- ✅ 27 đội tuyển (9 môn × 3 khối)
+- ✅ Mỗi đội có giáo viên phụ trách và học sinh
+
+### 🎯 Quản lý Điểm số
+- ✅ Thêm/sửa/xóa điểm thi cho học sinh
+- ✅ Tìm kiếm theo: Học sinh, Đội, Tên bài thi
+- ✅ Ghi chú chi tiết cho từng điểm
+- ✅ Lưu ngày thi và metadata
 
 ### ⭐ Đánh giá & Nhận xét
 - ✅ Đánh giá học sinh theo tiêu chí
 - ✅ Ghi chú chi tiết và lịch sử
 - ✅ Lưu trữ đánh giá theo thời gian
 
-## 📦 Cài đặt & Chạy
+## � Cài đặt nhanh
 
-### 1. Backend
+### ⚡ Setup một lệnh (Khuyến nghị)
 
-```powershell
-cd d:\xamp\htdocs\hsg-management-backend
+```bash
+# Clone project
+git clone <repository-url>
+cd hsg-management-backend
+
+# Cài đặt dependencies
 npm install
+cd client && npm install && cd ..
+
+# Setup database và dữ liệu mẫu
+node scripts/fullSetup.js        # Setup toàn bộ hệ thống
+
+# Khởi động servers
+npm start                        # Backend: http://localhost:8080
+cd client && npm run dev         # Frontend: http://localhost:5173
 ```
 
-**Cấu hình database:**
-- Copy `.env.example` thành `.env`
-- Cập nhật thông tin MySQL trong `.env`
+### 🔑 Tài khoản mặc định
 
-**Khởi tạo database:**
-```powershell
-node scripts/seedAdmin.js
-node scripts/seedTeachers.js
-node scripts/seedTeams.js
-node scripts/seedStudents.js
-node scripts/seedSchedules.js
+```
+Admin: namvokat@gmail.com / 123456
+Giáo viên: gv.toan1@hsg.edu.vn / 123456  
+Học sinh: hs1011_0@hsg.edu.vn / 123456
 ```
 
-**Chạy server:**
+### 📋 Cài đặt chi tiết
+
+#### 1. Yêu cầu hệ thống
+- Node.js 18+ 
+- MySQL 8.0+ hoặc MariaDB
+- XAMPP (khuyến nghị cho Windows)
+
+#### 2. Cấu hình Database
 ```powershell
+# Tạo database trong phpMyAdmin
+CREATE DATABASE `hsg-db`;
+
+# Cập nhật .env
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=hsg-db
+DB_USER=root
+DB_PASS=
+```
+
+#### 3. Backend Setup
+```bash
+npm install
 npm start                       # Production
 npm run dev                     # Development với nodemon
 ```
 
-Backend: `http://localhost:8080`
-
-### 2. Frontend
-
-```powershell
-cd d:\xamp\htdocs\hsg-management-backend\client
+#### 4. Frontend Setup
+```bash
+cd client
 npm install
 npm run dev                     # Development
 npm run build                   # Production build
 ```
 
-Frontend: `http://localhost:5173`
+### 🎯 Scripts hữu ích
 
-## 📁 Cấu trúc Project
+```bash
+# Essential Scripts (Chỉ còn 4 scripts cần thiết)
+node scripts/fullSetup.js           # Setup toàn bộ hệ thống
+node scripts/quickSetupAll.sql      # Setup nhanh database bằng SQL
+node scripts/resetAllPasswords.js   # Reset mật khẩu tất cả user
+node scripts/systemOverview.js      # Xem tổng quan hệ thống
+```
 
 ## 📁 Cấu trúc Project
 
 ```
 hsg-management-backend/
-├── package.json
-├── server.js
-├── .env
-├── README.md
+├── 📄 package.json              # Backend dependencies
+├── 📄 server.js                 # Main server file
+├── 📄 .env                      # Environment variables
+├── 📄 README.md                 # Documentation
 │
-├── src/
-│   ├── config/
-│   │   └── database.js
+├── 📁 src/                      # Backend source code
+│   ├── 📁 config/
+│   │   └── database.js          # Database configuration
 │   │
-│   ├── models/
-│   │   ├── User.js
-│   │   ├── Teacher.js
-│   │   ├── Student.js
-│   │   ├── Team.js
-│   │   ├── Schedule.js
-│   │   ├── Score.js
-│   │   └── Evaluation.js
+│   ├── 📁 models/               # Sequelize models
+│   │   ├── User.js              # User authentication
+│   │   ├── Teacher.js           # Teacher information
+│   │   ├── Student.js           # Student information
+│   │   ├── Team.js              # Team management
+│   │   ├── Schedule.js          # Schedule management
+│   │   ├── Score.js             # Score tracking
+│   │   ├── Evaluation.js        # Student evaluations
+│   │   └── associations.js      # Model relationships
 │   │
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── studentController.js
-│   │   ├── teamController.js
-│   │   ├── scheduleController.js
-│   │   ├── scoreController.js
-│   │   ├── evaluationController.js
-│   │   └── statisticsController.js
+│   ├── 📁 controllers/          # Business logic
+│   │   ├── authController.js    # Authentication logic
+│   │   ├── teacherController.js # Teacher management
+│   │   ├── studentController.js # Student management
+│   │   ├── teamController.js    # Team management
+│   │   ├── scheduleController.js# Schedule management
+│   │   ├── scoreController.js   # Score management
+│   │   ├── evaluationController.js # Evaluation management
+│   │   └── statisticsController.js # Statistics & reports
 │   │
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   ├── studentRoutes.js
-│   │   ├── teamRoutes.js
-│   │   ├── scheduleRoutes.js
-│   │   ├── scoreRoutes.js
-│   │   ├── evaluationRoutes.js
-│   │   └── statisticsRoutes.js
+│   ├── 📁 routes/               # API endpoints
+│   │   ├── authRoutes.js        # Authentication routes
+│   │   ├── teacherRoutes.js     # Teacher CRUD routes
+│   │   ├── studentRoutes.js     # Student CRUD routes
+│   │   ├── teamRoutes.js        # Team CRUD routes
+│   │   ├── scheduleRoutes.js    # Schedule CRUD routes
+│   │   ├── scoreRoutes.js       # Score CRUD routes
+│   │   ├── evaluationRoutes.js  # Evaluation CRUD routes
+│   │   └── statisticsRoutes.js  # Statistics routes
 │   │
-│   └── middleware/
-│       ├── authMiddleware.js
-│       └── adminMiddleware.js
+│   └── 📁 middleware/           # Express middleware
+│       ├── authMiddleware.js    # JWT authentication
+│       └── adminMiddleware.js   # Admin authorization
 │
-├── scripts/
-│   ├── seedAdmin.js
-│   ├── seedTeachers.js
-│   ├── seedTeams.js
-│   ├── seedStudents.js
-│   ├── seedSchedules.js
-│   ├── resetPass.js
-│   └── dropDB.js
+├── 📁 scripts/                  # Essential scripts only (4 files)
+│   ├── fullSetup.js             # Complete system setup
+│   ├── quickSetupAll.sql        # Quick database setup
+│   ├── resetAllPasswords.js     # Password reset utility
+│   └── systemOverview.js        # System overview tool
 │
-└── client/
-    ├── package.json
-    ├── vite.config.js
-    ├── index.html
+└── 📁 client/                   # Frontend React app
+    ├── 📄 package.json          # Frontend dependencies
+    ├── 📄 vite.config.js        # Vite configuration
+    ├── 📄 index.html            # HTML template
     │
-    ├── src/
-    │   ├── main.jsx
-    │   ├── App.jsx
-    │   ├── MainContent.jsx
-    │   │
-    │   ├── pages/
-    │   │   ├── LoginPage.jsx
-    │   │   ├── Home.jsx
-    │   │   ├── Schedule.jsx
-    │   │   ├── Students.jsx
-    │   │   ├── Teams.jsx
-    │   │   ├── Scores.jsx
-    │   │   ├── Evaluations.jsx
-    │   │   ├── Statistics.jsx
-    │   │   └── dangki.jsx
-    │   │
-    │   ├── components/
-    │   │
-    │   ├── utils/
-    │   │   ├── api.js
-    │   │   └── auth.js
-    │   │
-    │   └── styles/
-    │       ├── App.css
-    │       ├── Home.css
-    │       ├── Dashboard.css
-    │       ├── LoginPage.css
-    │       ├── Students.css
-    │       ├── Teams.css
-    │       └── Scores.css
-    │
-    └── dist/
-        ├── index.html
-        └── assets/
-            ├── index-*.js
-            └── index-*.css
+    └── 📁 src/
+        ├── 📄 main.jsx          # App entry point
+        ├── 📄 App.jsx           # Root component
+        ├── 📄 MainContent.jsx   # Main layout component
+        │
+        ├── 📁 pages/            # Page components
+        │   ├── LoginPage.jsx    # Login page
+        │   ├── dangki.jsx       # Registration page
+        │   ├── Home.jsx         # Dashboard home
+        │   ├── Schedule.jsx     # Schedule management
+        │   ├── Teams.jsx        # Team management
+        │   ├── TeachersPage.jsx # Teacher management
+        │   ├── Students.jsx     # Student management
+        │   ├── Scores.jsx       # Score management
+        │   ├── Evaluations.jsx  # Evaluation management
+        │   └── Statistics.jsx   # Statistics & reports
+        │
+        ├── 📁 components/       # Reusable UI components
+        │   ├── 📁 Layout/       # Layout components
+        │   │   ├── AppLayout.jsx    # Main app layout
+        │   │   └── AppLayout.css    # Layout styles
+        │   │
+        │   └── 📁 UI/           # UI components
+        │       ├── AppCard.jsx      # Card component
+        │       └── AppCard.css      # Card styles
+        │
+        ├── 📁 utils/            # Utility functions
+        │   ├── api.js           # API client
+        │   └── auth.js          # Authentication utilities
+        │
+        └── 📁 styles/           # Global styles
+            ├── GlobalTheme.css  # Global theme system
+            ├── Dashboard.css    # Dashboard styles
+            ├── MainContent.css  # Main content styles
+            └── Home.css         # Home page styles
+```
+
+### 🎨 UI Architecture
+
+```
+📁 UI System/
+├── 🎨 GlobalTheme.css           # CSS variables, utilities, animations
+├── 🏗️ AppLayout.jsx            # Main layout với gradient header
+├── 🃏 AppCard.jsx              # Flexible card component
+│   ├── Variants: default, glass, gradient, stats
+│   ├── Sizes: small, default, large
+│   └── Features: hover effects, loading states
+└── 📱 Responsive Design         # Mobile-first approach
 ```
 
 ## �‍💻 Developer
 
 Phát triển bởi Nam Vo  
 Email: namvokat@gmail.com
+
+## 🎮 Hướng dẫn sử dụng
+
+### 🔐 Đăng nhập
+1. Truy cập http://localhost:5173
+2. Đăng nhập với tài khoản admin: `namvokat@gmail.com` / `123456`
+
+### 👨‍🏫 Quản lý Giáo viên
+- **Xem danh sách**: Trang Teachers hiển thị 27 giáo viên với đầy đủ thông tin
+- **Cột "Đội phụ trách"**: Mỗi giáo viên được gán 1 team cụ thể
+- **Filter theo môn**: Dropdown lọc giáo viên theo 9 môn học
+- **Thêm giáo viên**: Admin có thể thêm giáo viên mới (tự động tạo User account)
+
+### 👨‍🎓 Quản lý Học sinh
+- **91 học sinh**: 81 có team (3/team) + 10 chưa có team
+- **Thông tin đầy đủ**: Tên, lớp, team, thông tin liên hệ
+- **Liên kết User**: Mỗi học sinh có tài khoản đăng nhập riêng
+- **Flexible assignment**: Có thể gán học sinh vào team bất kỳ lúc nào
+
+### 📅 Lịch học
+- **Navigation tháng**: Nút Previous/Next/Today
+- **Keyboard shortcuts**: Arrow keys, Home key
+- **Color-coding**: Mỗi môn có màu riêng biệt
+- **Event counter**: Hiển thị số sự kiện mỗi tháng
+
+### 📊 Thống kê
+- **Dashboard**: 4 cards thống kê tổng quan
+- **Biểu đồ**: Phân tích điểm số theo môn
+- **Xếp hạng**: Top học sinh xuất sắc
+
+### 🔧 Troubleshooting
+
+### Database Connection Issues
+```bash
+# Kiểm tra MySQL service trong XAMPP
+# Đảm bảo port 3306 không bị conflict
+# Chạy lại setup database
+node scripts/fullSetup.js
+```
+
+### Frontend Build Issues
+```bash
+# Clear cache và reinstall
+rm -rf client/node_modules client/dist
+cd client && npm install && npm run build
+```
+
+### Missing Data Issues
+```bash
+# Chạy script kiểm tra và setup lại
+node scripts/systemOverview.js
+node scripts/fullSetup.js
+```
+
+## 📈 Roadmap
+
+### 🎨 UI/UX Improvements
+- [x] **Modern Glass Morphism Design** - Completed ✅
+- [x] **Responsive Layout System** - Completed ✅
+- [x] **Consistent Theme Variables** - Completed ✅
+- [ ] **Dark Mode Support** - Coming soon 🌙
+- [ ] **Advanced Animations** - Micro-interactions và page transitions
+
+### 🚀 Technical Enhancements
+- [ ] **Mobile App**: React Native version
+- [ ] **Real-time notifications**: Socket.io integration  
+- [ ] **File upload**: Tài liệu, hình ảnh học sinh
+- [ ] **Export/Import**: Excel, PDF reports
+- [ ] **Advanced analytics**: Machine learning insights
+- [ ] **Multi-school support**: Quản lý nhiều trường
+- [ ] **PWA Support**: Progressive Web App features
+
+## 🤝 Contributing
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📄 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+## 📞 Contact & Support
+
+**Developer**: Nam Vo  
+**Email**: namvokat@gmail.com  
+**Project Link**: [GitHub Repository](https://github.com/namvokat/hsg-management)
+
+---
+
+<div align="center">
+
+**⭐ Nếu project hữu ích, hãy cho một star! ⭐**
+
+**🎨 Featuring Modern Glass Morphism UI Design**
+
+Made with ❤️ by Nam Vo
+
+</div>

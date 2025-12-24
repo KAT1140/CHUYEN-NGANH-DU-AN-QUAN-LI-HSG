@@ -1,7 +1,7 @@
 const Score = require('../models/Score');
-const Student = require('../models/Student');
+const Student = require('../models/student');
 const Team = require('../models/Team');
-const Teacher = require('../models/Teacher');
+const Teacher = require('../models/teacher');
 const User = require('../models/User');
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');

@@ -1,14 +1,16 @@
 import React, { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Select, Space, message, Card, Tag, DatePicker, InputNumber } from 'antd'
+import { Table, Button, Modal, Form, Input, Select, Space, message, Tag, DatePicker, InputNumber } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
 import dayjs from 'dayjs'
 import { getScores, getTeams, createScore, updateScore, deleteScore, getStudents } from '../utils/api'
+import AppLayout from '../components/Layout/AppLayout'
+import AppCard from '../components/UI/AppCard'
 
 export default function Scores(){
   const navigate = useNavigate()
   const [scores, setScores] = useState([])
-  const [allScores, setAllScores] = useState([]) // Store all scores for filtering
+  const [allScores, setAllScores] = useState([])
   const [teams, setTeams] = useState([])
   const [members, setMembers] = useState([])
   const [students, setStudents] = useState([])
@@ -17,12 +19,12 @@ export default function Scores(){
   const [isEditMode, setIsEditMode] = useState(false)
   const [editingScore, setEditingScore] = useState(null)
   const [form] = Form.useForm()
-  const [selectedTeamId, setSelectedTeamId] = useState(null)
-  const currentYear = new Date().getFullYear()
-  const [selectedYear, setSelectedYear] = useState(currentYear.toString())
-  const [availableYears, setAvailableYears] = useState([])
+  
+  // Filter states
+  const [selectedGrade, setSelectedGrade] = useState('all')
   const [selectedSubject, setSelectedSubject] = useState('all')
-  const [availableSubjects, setAvailableSubjects] = useState([])
+  const [selectedExamType, setSelectedExamType] = useState('all')
+  const [selectedYear, setSelectedYear] = useState('')
   
   // Get user role
   const userRole = localStorage.getItem('userRole') || 'user'
@@ -46,16 +48,34 @@ export default function Scores(){
         const fetchedScores = data.scores || []
         setAllScores(fetchedScores)
         
-        // Extract unique years
-        const years = [...new Set(fetchedScores.map(s => new Date(s.createdAt).getFullYear()))]
-        setAvailableYears(years.sort((a, b) => b - a))
+        // Tự động chọn năm mới nhất
+        if (fetchedScores.length > 0 && !selectedYear) {
+          const years = [...new Set(fetchedScores
+            .filter(s => s.examDate)
+            .map(s => new Date(s.examDate).getFullYear().toString())
+          )].sort((a, b) => b - a);
+          
+          if (years.length > 0) {
+            const latestYear = years[0];
+            setSelectedYear(latestYear);
+            
+            // Filter by latest year
+            const yearFiltered = fetchedScores.filter(s => {
+              if (s.examDate) {
+                const examYear = new Date(s.examDate).getFullYear();
+                return examYear.toString() === latestYear;
+              }
+              return false;
+            });
+            setScores(yearFiltered);
+          } else {
+            setScores(fetchedScores);
+          }
+        } else {
+          setScores(fetchedScores);
+        }
         
-        // Extract unique subjects
-        const subjects = [...new Set(fetchedScores.map(s => s.member?.team?.subject).filter(Boolean))]
-        setAvailableSubjects(subjects.sort((a, b) => a.localeCompare(b, 'vi')))
-        
-        // Apply filters
-        applyFilters(fetchedScores, selectedYear, selectedSubject)
+        console.log('Fetched scores:', fetchedScores.length)
       }
     } catch (err) {
       console.error('Error fetching scores:', err)
@@ -66,43 +86,128 @@ export default function Scores(){
     }
   }
 
-  // Apply filters function
-  const applyFilters = (scoresToFilter, year, subject) => {
-    let filtered = scoresToFilter
+  // Filter functions
+  const filterByExamType = (type) => {
+    let filtered = allScores
     
-    // Filter by year
-    if (year !== 'all') {
-      filtered = filtered.filter(s => 
-        new Date(s.createdAt).getFullYear() === parseInt(year)
+    if (type === 'hsg') {
+      filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
+    } else if (type === 'periodic') {
+      filtered = allScores.filter(s => 
+        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
+      )
+    }
+    // 'all' shows everything
+    
+    setScores(filtered)
+    setSelectedExamType(type)
+    console.log(`Filtered ${type}:`, filtered.length, 'scores')
+  }
+
+  const filterByGrade = (grade) => {
+    let filtered = allScores
+    
+    if (selectedExamType === 'hsg') {
+      filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
+    } else if (selectedExamType === 'periodic') {
+      filtered = allScores.filter(s => 
+        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
       )
     }
     
-    // Filter by subject
-    if (subject !== 'all') {
-      filtered = filtered.filter(s => 
-        s.member?.team?.subject === subject
-      )
+    if (grade !== 'all') {
+      filtered = filtered.filter(s => s.member?.grade?.toString() === grade)
     }
     
     setScores(filtered)
+    setSelectedGrade(grade)
+    console.log(`Filtered grade ${grade}:`, filtered.length, 'scores')
   }
 
-  // Filter scores when year or subject selection changes
-  useEffect(() => {
-    applyFilters(allScores, selectedYear, selectedSubject)
-  }, [selectedYear, selectedSubject, allScores])
+  const filterBySubject = (subject) => {
+    let filtered = allScores
+    
+    if (selectedExamType === 'hsg') {
+      filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
+    } else if (selectedExamType === 'periodic') {
+      filtered = allScores.filter(s => 
+        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
+      )
+    }
+    
+    if (selectedGrade !== 'all') {
+      filtered = filtered.filter(s => s.member?.grade?.toString() === selectedGrade)
+    }
+    
+    if (subject !== 'all') {
+      filtered = filtered.filter(s => s.member?.team?.subject === subject)
+    }
+    
+    setScores(filtered)
+    setSelectedSubject(subject)
+    console.log(`Filtered subject ${subject}:`, filtered.length, 'scores')
+  }
+
+  const filterByYear = (year) => {
+    let filtered = allScores
+    
+    if (selectedExamType === 'hsg') {
+      filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
+    } else if (selectedExamType === 'periodic') {
+      filtered = allScores.filter(s => 
+        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
+      )
+    }
+    
+    if (selectedGrade !== 'all') {
+      filtered = filtered.filter(s => s.member?.grade?.toString() === selectedGrade)
+    }
+    
+    if (selectedSubject !== 'all') {
+      filtered = filtered.filter(s => s.member?.team?.subject === selectedSubject)
+    }
+    
+    // Luôn lọc theo năm được chọn
+    filtered = filtered.filter(s => {
+      if (s.examDate) {
+        const examYear = new Date(s.examDate).getFullYear();
+        return examYear.toString() === year;
+      }
+      return false;
+    })
+    
+    setScores(filtered)
+    setSelectedYear(year)
+    console.log(`Filtered year ${year}:`, filtered.length, 'scores')
+  }
+
+  // Get unique values for filters
+  const getUniqueYears = () => {
+    const years = [...new Set(allScores
+      .filter(s => s.examDate)
+      .map(s => new Date(s.examDate).getFullYear().toString())
+    )];
+    return years.sort((a, b) => b - a); // Newest first
+  }
+  
+  const getUniqueGrades = () => {
+    const grades = [...new Set(allScores.map(s => s.member?.grade?.toString()).filter(Boolean))]
+    return grades.sort()
+  }
+
+  const getUniqueSubjects = () => {
+    const subjects = [...new Set(allScores.map(s => s.member?.team?.subject).filter(Boolean))]
+    return subjects.sort()
+  }
 
   // Fetch teams and members
   const fetchTeamsData = async () => {
     try {
       const data = await getTeams()
-      console.log('Teams data:', data)
       if (data && data.teams) {
         setTeams(data.teams)
-        // Build members list from teams
         const allMembers = []
         data.teams.forEach(team => {
-          console.log('Team:', team.name, 'Members:', team.members)
           if (team.members && Array.isArray(team.members)) {
             team.members.forEach(member => {
               allMembers.push({
@@ -115,7 +220,6 @@ export default function Scores(){
             })
           }
         })
-        console.log('All members:', allMembers)
         setMembers(allMembers)
       }
     } catch (err) {
@@ -144,11 +248,15 @@ export default function Scores(){
   const handleAddScore = async (values) => {
     try {
       message.loading({ content: 'Đang thêm điểm...', key: 'addScoreLoading' })
+      
+      // Tự động xác định maxScore dựa trên loại kỳ thi
+      const maxScore = values.testName === 'HSG cấp tỉnh' ? 20 : 10;
+      
       const scoreData = {
         memberId: values.memberId,
         testName: values.testName,
         score: values.score,
-        maxScore: 10,
+        maxScore: maxScore,
         examDate: values.examDate ? values.examDate.format('YYYY-MM-DD') : null,
         notes: values.notes
       }
@@ -232,8 +340,7 @@ export default function Scores(){
         const subjectA = a.member?.team?.subject || '';
         const subjectB = b.member?.team?.subject || '';
         return subjectA.localeCompare(subjectB, 'vi');
-      },
-      defaultSortOrder: 'ascend'
+      }
     },
     {
       title: 'Tên học sinh',
@@ -242,10 +349,10 @@ export default function Scores(){
       render: (_, record) => record.member?.name || 'N/A'
     },
     {
-      title: 'Mã học sinh',
-      dataIndex: ['member', 'studentId'],
-      key: 'studentId',
-      render: (_, record) => record.member?.studentId || 'N/A'
+      title: 'Khối',
+      dataIndex: ['member', 'grade'],
+      key: 'grade',
+      render: (_, record) => record.member?.grade || 'N/A'
     },
     {
       title: 'Bài kiểm tra',
@@ -253,10 +360,76 @@ export default function Scores(){
       key: 'testName'
     },
     {
+      title: 'Loại kỳ thi',
+      dataIndex: 'testName',
+      key: 'examType',
+      render: (testName) => {
+        if (testName === 'HSG cấp tỉnh') {
+          return <Tag color="gold">HSG Cấp tỉnh</Tag>;
+        } else if (testName?.includes('Kiểm tra') || testName?.includes('kiểm tra')) {
+          return <Tag color="blue">Kiểm tra định kỳ</Tag>;
+        }
+        return <Tag color="default">Khác</Tag>;
+      }
+    },
+    {
       title: 'Điểm',
       dataIndex: 'score',
       key: 'score',
-      render: (score, record) => `${score}/${record.maxScore}`
+      render: (score, record) => {
+        // Hiển thị thang điểm phù hợp
+        const maxScore = record.maxScore || 10;
+        return `${score}/${maxScore}`;
+      },
+      sorter: (a, b) => a.score - b.score
+    },
+    {
+      title: 'Giải thưởng',
+      dataIndex: 'award',
+      key: 'award',
+      render: (award, record) => {
+        // Chỉ hiển thị giải cho kỳ thi HSG
+        const isHSGExam = record.testName === 'HSG cấp tỉnh';
+        
+        if (!isHSGExam) {
+          return '-';
+        }
+        
+        if (award) {
+          const colorMap = {
+            'Giải Nhất': 'gold',
+            'Giải Nhì': 'purple', 
+            'Giải Ba': 'cyan',
+            'Giải Khuyến khích': 'blue'
+          };
+          return <Tag color={colorMap[award] || 'default'}>{award}</Tag>;
+        }
+        
+        return <Tag color="default">Không đạt giải</Tag>;
+      },
+      filters: [
+        { text: 'Giải Nhất', value: 'Giải Nhất' },
+        { text: 'Giải Nhì', value: 'Giải Nhì' },
+        { text: 'Giải Ba', value: 'Giải Ba' },
+        { text: 'Giải Khuyến khích', value: 'Giải Khuyến khích' },
+        { text: 'Không đạt giải', value: null }
+      ],
+      onFilter: (value, record) => {
+        if (record.testName !== 'HSG cấp tỉnh') return false;
+        return record.award === value;
+      }
+    },
+    {
+      title: 'Năm',
+      dataIndex: 'examDate',
+      key: 'year',
+      render: (date) => date ? new Date(date).getFullYear() : 'N/A',
+      sorter: (a, b) => {
+        const yearA = a.examDate ? new Date(a.examDate).getFullYear() : 0;
+        const yearB = b.examDate ? new Date(b.examDate).getFullYear() : 0;
+        return yearB - yearA; // Newest first
+      },
+      defaultSortOrder: 'descend'
     },
     {
       title: 'Ngày thi',
@@ -264,108 +437,133 @@ export default function Scores(){
       key: 'examDate',
       render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : 'N/A'
     },
-    {
-      title: 'Giải',
-      dataIndex: 'award',
-      key: 'award',
-      render: (award, record) => {
-        // Chỉ hiển thị giải cho bài thi HSG, không hiển thị cho bài kiểm tra
-        if (record.testName && record.testName.includes('Kỳ thi HSG')) {
-          return award || '-'
-        }
-        return '-'
-      }
-    },
-    {
-      title: 'Giáo viên bộ môn',
-      dataIndex: ['subjectTeacher', 'name'],
-      key: 'subjectTeacher',
-      render: (_, record) => record.subjectTeacher?.name || 'N/A'
-    },
-    {
+    // Chỉ hiển thị cột thao tác cho admin/teacher
+    ...(canAddScore ? [{
       title: 'Thao tác',
       key: 'action',
       render: (_, record) => (
         <Space size="small">
-          {canAddScore && (
-            <>
-              <Button
-                icon={<EditOutlined />}
-                size="small"
-                onClick={() => handleEdit(record)}
-              >
-                Sửa
-              </Button>
-              <Button
-                icon={<DeleteOutlined />}
-                size="small"
-                danger
-                onClick={() => handleDelete(record.id)}
-              >
-                Xóa
-              </Button>
-            </>
-          )}
+          <Button
+            icon={<EditOutlined />}
+            size="small"
+            onClick={() => handleEdit(record)}
+          >
+            Sửa
+          </Button>
+          <Button
+            icon={<DeleteOutlined />}
+            size="small"
+            danger
+            onClick={() => handleDelete(record.id)}
+          >
+            Xóa
+          </Button>
         </Space>
       )
-    }
+    }] : [])
   ]
 
   return (
-    <div>
-      <Space style={{ marginBottom: 16 }}>
-        {canAddScore && (
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              setIsEditMode(false)
-              setEditingScore(null)
-              form.resetFields()
-              setIsModalVisible(true)
-            }}
-          >
-            Thêm điểm
-          </Button>
-        )}
-        <Button icon={<ReloadOutlined />} onClick={fetchScores} loading={loading}>
-          Làm mới
-        </Button>
-        <Select
-          value={selectedYear}
-          onChange={setSelectedYear}
-          style={{ width: 150 }}
-          placeholder="Chọn năm"
-        >
-          <Select.Option value="all">Tất cả năm</Select.Option>
-          {availableYears.map(year => (
-            <Select.Option key={year} value={year.toString()}>
-              Năm {year}
-            </Select.Option>
-          ))}
-        </Select>
-        <Select
-          value={selectedSubject}
-          onChange={setSelectedSubject}
-          style={{ width: 150 }}
-          placeholder="Chọn môn học"
-        >
-          <Select.Option value="all">Tất cả môn</Select.Option>
-          {availableSubjects.map(subject => (
-            <Select.Option key={subject} value={subject}>
-              {subject}
-            </Select.Option>
-          ))}
-        </Select>
-      </Space>
+    <AppLayout 
+      title="Bảng Điểm HSG" 
+      subtitle="Quản lý điểm thi và đánh giá học sinh"
+    >
+      <AppCard 
+        title="Danh sách điểm số"
+        variant="glass"
+        extra={
+          <Space>
+            {canAddScore && (
+              <Button
+                type="primary"
+                icon={<PlusOutlined />}
+                onClick={() => {
+                  setIsEditMode(false)
+                  setEditingScore(null)
+                  form.resetFields()
+                  setIsModalVisible(true)
+                }}
+              >
+                Thêm điểm
+              </Button>
+            )}
+            <Button icon={<ReloadOutlined />} onClick={fetchScores} loading={loading}>
+              Làm mới
+            </Button>
+          </Space>
+        }
+      >
+        {/* Filter Section */}
+        <div style={{ marginBottom: 24 }}>
+          <Space wrap size="middle">
+            <Select
+              value={selectedExamType}
+              onChange={filterByExamType}
+              style={{ width: 180 }}
+              placeholder="Chọn kỳ thi"
+            >
+              <Select.Option value="all">Tất cả kỳ thi</Select.Option>
+              <Select.Option value="hsg">HSG Cấp tỉnh</Select.Option>
+              <Select.Option value="periodic">Kiểm tra định kỳ</Select.Option>
+            </Select>
 
-      <Table
-        dataSource={scores}
-        columns={columns}
-        rowKey="id"
-        loading={loading}
-        pagination={{ pageSize: 10 }}
-      />
+            <Select
+              value={selectedYear}
+              onChange={filterByYear}
+              style={{ width: 120 }}
+              placeholder="Chọn năm"
+            >
+              {getUniqueYears().map(year => (
+                <Select.Option key={year} value={year}>
+                  Năm {year}
+                </Select.Option>
+              ))}
+            </Select>
+
+            <Select
+              value={selectedGrade}
+              onChange={filterByGrade}
+              style={{ width: 120 }}
+              placeholder="Chọn khối"
+            >
+              <Select.Option value="all">Tất cả khối</Select.Option>
+              {getUniqueGrades().map(grade => (
+                <Select.Option key={grade} value={grade}>
+                  Khối {grade}
+                </Select.Option>
+              ))}
+            </Select>
+
+            <Select
+              value={selectedSubject}
+              onChange={filterBySubject}
+              style={{ width: 150 }}
+              placeholder="Chọn môn học"
+            >
+              <Select.Option value="all">Tất cả môn</Select.Option>
+              {getUniqueSubjects().map(subject => (
+                <Select.Option key={subject} value={subject}>
+                  {subject}
+                </Select.Option>
+              ))}
+            </Select>
+          </Space>
+        </div>
+
+        <Table
+          dataSource={scores}
+          columns={columns}
+          rowKey="id"
+          loading={loading}
+          pagination={{ 
+            pageSize: 10,
+            showSizeChanger: true,
+            showQuickJumper: true,
+            showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} điểm`
+          }}
+          scroll={{ x: 1200 }}
+        />
+      </AppCard>
 
       <Modal
         title={isEditMode ? 'Cập nhật điểm' : 'Thêm điểm mới'}
@@ -395,7 +593,14 @@ export default function Scores(){
             label="Tên bài kiểm tra"
             rules={[{ required: true, message: 'Vui lòng nhập tên bài kiểm tra!' }]}
           >
-            <Input placeholder="VD: Kiểm tra Toán tuần 1" />
+            <Select placeholder="Chọn loại bài kiểm tra">
+              <Select.Option value="HSG cấp tỉnh">HSG cấp tỉnh</Select.Option>
+              <Select.Option value="Kiểm tra đầu năm">Kiểm tra đầu năm</Select.Option>
+              <Select.Option value="Kiểm tra giữa kỳ 1">Kiểm tra giữa kỳ 1</Select.Option>
+              <Select.Option value="Kiểm tra cuối kỳ 1">Kiểm tra cuối kỳ 1</Select.Option>
+              <Select.Option value="Kiểm tra đầu kỳ 2">Kiểm tra đầu kỳ 2</Select.Option>
+              <Select.Option value="Kiểm tra giữa kỳ 2">Kiểm tra giữa kỳ 2</Select.Option>
+            </Select>
           </Form.Item>
 
           <Form.Item
@@ -403,7 +608,13 @@ export default function Scores(){
             label="Điểm"
             rules={[{ required: true, message: 'Vui lòng nhập điểm!' }]}
           >
-            <InputNumber min={0} max={10} step={0.1} style={{width: '100%'}} />
+            <InputNumber 
+              min={0} 
+              max={20} 
+              step={0.1} 
+              style={{width: '100%'}} 
+              placeholder="Nhập điểm (HSG: /20, Khác: /10)"
+            />
           </Form.Item>
 
           <Form.Item
@@ -411,18 +622,6 @@ export default function Scores(){
             label="Ngày thi"
           >
             <DatePicker style={{ width: '100%' }} />
-          </Form.Item>
-
-          <Form.Item
-            name="award"
-            label="Giải thưởng"
-          >
-            <Select placeholder="Chọn giải thưởng" allowClear>
-              <Select.Option value="Nhất">Giải Nhất</Select.Option>
-              <Select.Option value="Nhì">Giải Nhì</Select.Option>
-              <Select.Option value="Ba">Giải Ba</Select.Option>
-              <Select.Option value="Khuyến khích">Giải Khuyến khích</Select.Option>
-            </Select>
           </Form.Item>
 
           <Form.Item
@@ -439,6 +638,6 @@ export default function Scores(){
           </Form.Item>
         </Form>
       </Modal>
-    </div>
+    </AppLayout>
   )
 }

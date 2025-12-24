@@ -1,7 +1,7 @@
 const Team = require('../models/Team');
-const Student = require('../models/Student');
+const Student = require('../models/student');
 const User = require('../models/User'); 
-const Teacher = require('../models/Teacher');
+const Teacher = require('../models/teacher');
 const bcrypt = require('bcryptjs'); 
 const saltRounds = 10; 
 const { Op } = require('sequelize');
@@ -29,17 +29,8 @@ exports.getAll = async (req, res) => {
         include: [{ model: Student, as: 'members' }]
       });
     } else if (role === 'teacher') {
-      // Teacher: Chỉ xem đội có cùng môn với mình
-      // Lấy thông tin giáo viên từ database
-      const teacher = await Teacher.findOne({ where: { userId: id } });
-      
-      if (!teacher || !teacher.subject) {
-        // Nếu giáo viên không có môn (dữ liệu cũ), trả về rỗng để an toàn
-        return res.json({ teams: [] });
-      }
-
+      // Teacher: Xem tất cả đội (để tham khảo) nhưng chỉ quản lý môn mình
       teams = await Team.findAll({
-        where: { subject: teacher.subject },
         include: [{ model: Student, as: 'members' }]
       });
     } else {
@@ -101,12 +92,8 @@ exports.getById = async (req, res) => {
        if (!isMember) return res.status(403).json({ error: 'Bạn không có quyền xem đội này' });
     }
     
-    // Check quyền Teacher (phải đúng môn)
-    if (req.user.role === 'teacher') {
-        if (!req.user.subject || team.subject !== req.user.subject) {
-            return res.status(403).json({ error: 'Bạn không được phép xem đội thuộc môn khác' });
-        }
-    }
+    // Check quyền Teacher (có thể xem tất cả team để tham khảo)
+    // Không cần check môn ở đây nữa
 
     res.json({ team });
   } catch (err) {
@@ -119,15 +106,8 @@ exports.getMembersByTeam = async (req, res) => {
   try {
     const teamId = req.params.teamId;
     
-    // Logic check quyền (để an toàn)
-    if (req.user.role === 'teacher') {
-        const team = await Team.findByPk(teamId);
-        const teacher = await Teacher.findOne({ where: { userId: req.user.id } });
-        
-        if (team && teacher && team.subject !== teacher.subject) {
-             return res.status(403).json({ error: 'Không có quyền truy cập' });
-        }
-    }
+    // Logic check quyền (giáo viên có thể xem tất cả team để tham khảo)
+    // Không cần check môn ở đây nữa
 
     const members = await Student.findAll({ 
       where: { teamId }, 
