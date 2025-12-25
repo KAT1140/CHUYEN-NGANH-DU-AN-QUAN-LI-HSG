@@ -67,16 +67,27 @@ export default function Schedule(){
   const fetchSchedules = async () => {
     setLoading(true);
     try {
+      console.log('🔄 Fetching schedules...');
       const res = await fetchAuth(`${API_BASE}/schedules`);
+      console.log('📡 API Response:', res);
+      
       if (res && res.error === 'Unauthorized') {
         message.error('Phiên đăng nhập hết hạn');
         navigate('/login');
         return;
       }
-      if (!res.ok) throw new Error('Failed to fetch');
+      if (!res.ok) {
+        console.log('❌ Response not OK:', res.status, res.statusText);
+        throw new Error('Failed to fetch');
+      }
       const data = await res.json();
+      console.log('📊 Data received:', data);
+      console.log('📅 Schedules count:', data.schedules ? data.schedules.length : 0);
+      console.log('🔍 Sample schedule:', data.schedules ? data.schedules[0] : 'none');
       setSchedules(data.schedules || []);
+      console.log('✅ State updated with schedules');
     } catch (err) {
+      console.error('❌ Fetch error:', err);
       message.error('Lỗi tải lịch');
     } finally {
       setLoading(false);
@@ -134,9 +145,13 @@ export default function Schedule(){
   };
 
   const getSchedulesForDate = (date) => {
-    return schedules.filter(schedule => 
+    const result = schedules.filter(schedule => 
       dayjs(schedule.date).isSame(date, 'day')
     );
+    if (result.length > 0) {
+      console.log(`📅 Date ${date.format('YYYY-MM-DD')} has ${result.length} schedules:`, result);
+    }
+    return result;
   };
 
   // Tính số lượng sự kiện trong tháng hiện tại
@@ -298,6 +313,8 @@ export default function Schedule(){
 
   const dateCellRender = (value) => {
     const dateSchedules = getSchedulesForDate(value);
+    console.log(`🎯 Rendering date ${value.format('YYYY-MM-DD')}, found ${dateSchedules.length} schedules`);
+    
     return (
       <ul style={{ listStyle: 'none', padding: '2px', margin: 0 }}>
         {dateSchedules.slice(0, 2).map((schedule) => {

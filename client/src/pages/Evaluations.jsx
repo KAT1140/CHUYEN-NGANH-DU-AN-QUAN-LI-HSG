@@ -2,9 +2,9 @@
 
 import React, { useState, useEffect } from 'react'
 import { Table, Button, Modal, Form, Input, Select, Space, message, DatePicker, Tag } from 'antd'
-import { PlusOutlined, DeleteOutlined, ReloadOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, ReloadOutlined, EditOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import { getEvaluations, getTeams, createEvaluation, deleteEvaluation } from '../utils/api'
+import { getEvaluations, getTeams, createEvaluation, deleteEvaluation, updateEvaluation } from '../utils/api'
 import AppLayout from '../components/Layout/AppLayout'
 import AppCard from '../components/UI/AppCard'
 
@@ -13,6 +13,8 @@ export default function Evaluations(){
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [form] = Form.useForm()
   
   const userRole = localStorage.getItem('userRole') || 'user'
@@ -63,20 +65,39 @@ export default function Evaluations(){
         date: values.date ? values.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')
       }
       
-      const res = await createEvaluation(payload)
+      let res;
+      if (isEditMode) {
+        res = await updateEvaluation(editingId, payload)
+        message.success('Đã cập nhật đánh giá thành công!')
+      } else {
+        res = await createEvaluation(payload)
+        message.success('Đã thêm đánh giá thành công!')
+      }
       
       if (res.error) {
         message.error(res.error)
       } else {
-        message.success('Đã thêm đánh giá thành công!')
         setIsModalVisible(false)
         form.resetFields()
+        setIsEditMode(false)
+        setEditingId(null)
         fetchData() // Tải lại danh sách ngay lập tức
       }
     } catch (err) {
       console.error(err)
       message.error('Lỗi hệ thống hoặc kết nối mạng')
     }
+  }
+
+  const handleEdit = (record) => {
+    setIsEditMode(true)
+    setEditingId(record.id)
+    form.setFieldsValue({
+      memberId: record.memberId,
+      content: record.content,
+      date: record.date ? dayjs(record.date) : dayjs()
+    })
+    setIsModalVisible(true)
   }
 
   const handleDelete = async (id) => {
@@ -134,7 +155,21 @@ export default function Evaluations(){
       title: '',
       key: 'action',
       render: (_, record) => canManage && (
-        <Button danger icon={<DeleteOutlined/>} size="small" onClick={()=>handleDelete(record.id)} />
+        <Space>
+          <Button 
+            icon={<EditOutlined/>} 
+            size="small" 
+            onClick={() => handleEdit(record)}
+            title="Chỉnh sửa"
+          />
+          <Button 
+            danger 
+            icon={<DeleteOutlined/>} 
+            size="small" 
+            onClick={() => handleDelete(record.id)}
+            title="Xóa"
+          />
+        </Space>
       )
     }
   ]
@@ -175,9 +210,14 @@ export default function Evaluations(){
       </AppCard>
 
       <Modal
-        title="Thêm đánh giá học sinh"
+        title={isEditMode ? "Chỉnh sửa đánh giá" : "Thêm đánh giá học sinh"}
         open={isModalVisible}
-        onCancel={()=>{ setIsModalVisible(false); form.resetFields(); }}
+        onCancel={() => { 
+          setIsModalVisible(false); 
+          form.resetFields(); 
+          setIsEditMode(false);
+          setEditingId(null);
+        }}
         footer={null}
         destroyOnClose
       >
@@ -212,7 +252,9 @@ export default function Evaluations(){
             <Input.TextArea rows={4} placeholder="Ví dụ: Em làm bài tập đầy đủ, tích cực phát biểu..." />
           </Form.Item>
 
-          <Button type="primary" htmlType="submit" style={{width:'100%'}}>Lưu đánh giá</Button>
+          <Button type="primary" htmlType="submit" style={{width:'100%'}}>
+            {isEditMode ? 'Cập nhật đánh giá' : 'Lưu đánh giá'}
+          </Button>
         </Form>
       </Modal>
     </AppLayout>

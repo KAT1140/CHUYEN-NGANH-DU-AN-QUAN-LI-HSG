@@ -58,6 +58,30 @@ exports.create = async (req, res) => {
   }
 };
 
+// Cập nhật đánh giá (Chỉ Teacher/Admin)
+exports.update = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { memberId, content, rating, date } = req.body;
+    
+    const evaluation = await Evaluation.findByPk(id);
+    if (!evaluation) {
+      return res.status(404).json({ error: 'Không tìm thấy đánh giá' });
+    }
+
+    await evaluation.update({
+      memberId,
+      content,
+      rating,
+      date
+    });
+
+    res.json({ evaluation, message: 'Đã cập nhật đánh giá' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Xóa đánh giá (Chỉ Teacher/Admin)
 exports.delete = async (req, res) => {
   try {

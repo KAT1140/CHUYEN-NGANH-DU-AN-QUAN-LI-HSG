@@ -92,6 +92,8 @@ export default function Scores(){
     
     if (type === 'hsg') {
       filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
+    } else if (type === 'hsg-national') {
+      filtered = allScores.filter(s => s.testName?.includes('HSG Quốc gia'))
     } else if (type === 'periodic') {
       filtered = allScores.filter(s => 
         s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
@@ -109,6 +111,8 @@ export default function Scores(){
     
     if (selectedExamType === 'hsg') {
       filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
+    } else if (selectedExamType === 'hsg-national') {
+      filtered = allScores.filter(s => s.testName?.includes('HSG Quốc gia'))
     } else if (selectedExamType === 'periodic') {
       filtered = allScores.filter(s => 
         s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
@@ -129,6 +133,8 @@ export default function Scores(){
     
     if (selectedExamType === 'hsg') {
       filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
+    } else if (selectedExamType === 'hsg-national') {
+      filtered = allScores.filter(s => s.testName?.includes('HSG Quốc gia'))
     } else if (selectedExamType === 'periodic') {
       filtered = allScores.filter(s => 
         s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
@@ -153,6 +159,8 @@ export default function Scores(){
     
     if (selectedExamType === 'hsg') {
       filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
+    } else if (selectedExamType === 'hsg-national') {
+      filtered = allScores.filter(s => s.testName?.includes('HSG Quốc gia'))
     } else if (selectedExamType === 'periodic') {
       filtered = allScores.filter(s => 
         s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
@@ -366,6 +374,8 @@ export default function Scores(){
       render: (testName) => {
         if (testName === 'HSG cấp tỉnh') {
           return <Tag color="gold">HSG Cấp tỉnh</Tag>;
+        } else if (testName?.includes('HSG Quốc gia')) {
+          return <Tag color="red">HSG Quốc gia</Tag>;
         } else if (testName?.includes('Kiểm tra') || testName?.includes('kiểm tra')) {
           return <Tag color="blue">Kiểm tra định kỳ</Tag>;
         }
@@ -389,7 +399,7 @@ export default function Scores(){
       key: 'award',
       render: (award, record) => {
         // Chỉ hiển thị giải cho kỳ thi HSG
-        const isHSGExam = record.testName === 'HSG cấp tỉnh';
+        const isHSGExam = record.testName === 'HSG cấp tỉnh' || record.testName?.includes('HSG Quốc gia');
         
         if (!isHSGExam) {
           return '-';
@@ -400,7 +410,12 @@ export default function Scores(){
             'Giải Nhất': 'gold',
             'Giải Nhì': 'purple', 
             'Giải Ba': 'cyan',
-            'Giải Khuyến khích': 'blue'
+            'Giải Khuyến khích': 'blue',
+            'Giải Nhất QG': 'red',
+            'Giải Nhì QG': 'volcano', 
+            'Giải Ba QG': 'orange',
+            'Giải Khuyến khích QG': 'geekblue',
+            'Tham dự QG': 'default'
           };
           return <Tag color={colorMap[award] || 'default'}>{award}</Tag>;
         }
@@ -412,10 +427,16 @@ export default function Scores(){
         { text: 'Giải Nhì', value: 'Giải Nhì' },
         { text: 'Giải Ba', value: 'Giải Ba' },
         { text: 'Giải Khuyến khích', value: 'Giải Khuyến khích' },
+        { text: 'Giải Nhất QG', value: 'Giải Nhất QG' },
+        { text: 'Giải Nhì QG', value: 'Giải Nhì QG' },
+        { text: 'Giải Ba QG', value: 'Giải Ba QG' },
+        { text: 'Giải Khuyến khích QG', value: 'Giải Khuyến khích QG' },
+        { text: 'Tham dự QG', value: 'Tham dự QG' },
         { text: 'Không đạt giải', value: null }
       ],
       onFilter: (value, record) => {
-        if (record.testName !== 'HSG cấp tỉnh') return false;
+        const isHSGExam = record.testName === 'HSG cấp tỉnh' || record.testName?.includes('HSG Quốc gia');
+        if (!isHSGExam) return false;
         return record.award === value;
       }
     },
@@ -504,6 +525,7 @@ export default function Scores(){
             >
               <Select.Option value="all">Tất cả kỳ thi</Select.Option>
               <Select.Option value="hsg">HSG Cấp tỉnh</Select.Option>
+              <Select.Option value="hsg-national">HSG Quốc gia</Select.Option>
               <Select.Option value="periodic">Kiểm tra định kỳ</Select.Option>
             </Select>
 

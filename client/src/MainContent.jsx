@@ -11,6 +11,7 @@ import Dashboard from './pages/Schedule'
 import Teams from './pages/Teams'
 import Scores from './pages/Scores'         
 import Home from './pages/Home'           
+import Welcome from './pages/Welcome'     // <--- Import Welcome page
 import DangKi from './pages/dangki.jsx'
 import Evaluations from './pages/Evaluations' // <--- Đã import Đánh giá
 import Students from './pages/Students'       // <--- Đã import Học sinh
@@ -42,7 +43,8 @@ export default function MainContent(){
 
   function logout(){
     removeToken();
-    navigate('/'); 
+    setUser(null); // Cập nhật state ngay lập tức
+    navigate('/welcome'); // Chuyển về trang Welcome
   }
 
   function Protected({ children }){
@@ -89,7 +91,8 @@ export default function MainContent(){
 
         <Content className="main-content">
           <Routes>
-            <Route path="/" element={<Home/>} />
+            <Route path="/" element={user ? <Home/> : <Welcome/>} />
+            <Route path="/welcome" element={<Welcome/>} />
             <Route path="/login" element={<LoginPage/>} />
             <Route path="/dangki" element={<DangKi/>} />
             

@@ -131,6 +131,15 @@ export async function createEvaluation(data){
   return res.json();
 }
 
+export async function updateEvaluation(id, data){
+  const res = await fetchAuth(`${API_BASE}/evaluations/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  return res.json();
+}
+
 export async function deleteEvaluation(id){
   const res = await fetchAuth(`${API_BASE}/evaluations/${id}`, {
     method: 'DELETE'

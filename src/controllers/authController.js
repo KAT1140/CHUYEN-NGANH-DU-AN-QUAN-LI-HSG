@@ -37,7 +37,7 @@ exports.login = async (req, res) => {
       subject: user.subject 
     }; 
     // ------------------------------------
-    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '8h' });
+    const token = jwt.sign(payload, JWT_SECRET, { expiresIn: '30d' });
     res.json({ token, user: sanitizeUser(user) });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -9,38 +9,38 @@ const { Op } = require('sequelize');
 
 exports.getAll = async (req, res) => {
   try {
-    const { role, id } = req.user;
     let whereClause = {};
 
-    // Giáo viên: xem lịch dạy (lịch của môn họ dạy)
-    if (role === 'teacher') {
-      const teacher = await Teacher.findOne({ where: { userId: id } });
-      if (teacher && teacher.subject) {
-        whereClause.subject = teacher.subject;
+    // Nếu có user context (đã đăng nhập)
+    if (req.user) {
+      const { role, id } = req.user;
+
+      // Giáo viên: xem lịch dạy (lịch của môn họ dạy)
+      if (role === 'teacher') {
+        const teacher = await Teacher.findOne({ where: { userId: id } });
+        if (teacher && teacher.subject) {
+          whereClause.subject = teacher.subject;
+        }
       }
-    }
-    // Học sinh: xem lịch học (lịch của môn họ ôn)
-    else if (role === 'user') {
-      const student = await Student.findOne({ 
-        where: { userId: id },
-        include: [{ model: Team, as: 'team' }]
-      });
-      if (student && student.team && student.team.subject) {
-        whereClause.subject = student.team.subject;
-      } else {
-        // Nếu không có team, không hiển lịch nào
-        whereClause.subject = null;
+      // Học sinh: xem lịch học (lịch của môn họ ôn)
+      else if (role === 'user') {
+        const student = await Student.findOne({ 
+          where: { userId: id },
+          include: [{ model: Team, as: 'team' }]
+        });
+        if (student && student.team && student.team.subject) {
+          whereClause.subject = student.team.subject;
+        } else {
+          // Nếu không có team, không hiển lịch nào
+          whereClause.subject = null;
+        }
       }
+      // Admin thấy tất cả
     }
-    // Admin thấy tất cả
+    // Nếu không có user context, hiển thị tất cả (cho test)
 
     const schedules = await Schedule.findAll({
       where: whereClause,
-      include: {
-        model: User,
-        attributes: ['id', 'name', 'email'],
-        as: 'creator'
-      },
       order: [['date', 'ASC'], ['time', 'ASC']]
     });
     res.json({ schedules });
@@ -54,11 +54,6 @@ exports.getByDate = async (req, res) => {
     const { date } = req.params; // format: YYYY-MM-DD
     const schedules = await Schedule.findAll({
       where: { date },
-      include: {
-        model: User,
-        attributes: ['id', 'name', 'email'],
-        as: 'creator'
-      },
       order: [['time', 'ASC']]
     });
     res.json({ schedules });
