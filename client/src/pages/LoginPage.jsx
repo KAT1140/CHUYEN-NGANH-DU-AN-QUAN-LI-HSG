@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import { Card, Form, Input, Button, message, Checkbox } from 'antd'
 // ĐÃ SỬA LỖI: Thêm Link vào import
-import { useNavigate, Link } from 'react-router-dom' 
+import { useNavigate } from 'react-router-dom' 
 import { setToken, setUser } from '../utils/auth' 
 import AppLayout from '../components/Layout/AppLayout'
 import AppCard from '../components/UI/AppCard' 
@@ -68,7 +68,7 @@ export default function LoginPage(){
     >
       <div style={{display:'flex', justifyContent:'center', paddingTop: '2rem'}}>
         <AppCard 
-          title="Đăng nhập" 
+          title="Đăng nhập"
           variant="glass"
           style={{width: 400, maxWidth: '100%'}}
         >
@@ -93,11 +93,6 @@ export default function LoginPage(){
               <Button type="primary" htmlType="submit" size="large" style={{width:'100%'}}>
                 Đăng Nhập
               </Button>
-            </Form.Item>
-            
-            {/* LIÊN KẾT ĐĂNG KÝ */}
-            <Form.Item style={{textAlign: 'center', marginBottom: 0}}>
-              Chưa có tài khoản? <Link to="/dangki">Đăng ký ngay</Link>
             </Form.Item>
           </Form>
         </AppCard>

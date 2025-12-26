@@ -3,6 +3,7 @@ const Teacher = require('../models/teacher');
 const User = require('../models/User');
 const Team = require('../models/Team');
 const bcrypt = require('bcryptjs');
+const { Op } = require('sequelize');
 
 // Lấy danh sách tất cả giáo viên
 exports.getAll = async (req, res) => {
@@ -58,7 +59,7 @@ exports.getAll = async (req, res) => {
 // Tạo giáo viên mới
 exports.create = async (req, res) => {
   try {
-    const { fullName, email, subject, department, specialization, phoneNumber } = req.body;
+    const { fullName, email, subject, department, specialization, phoneNumber, teamId } = req.body;
 
     // Kiểm tra email trùng
     const existingTeacher = await Teacher.findOne({ where: { email } });
@@ -92,11 +93,110 @@ exports.create = async (req, res) => {
       userId: user.id
     });
 
+    // Gán team nếu có
+    if (teamId) {
+      await Team.update({ teacherId: user.id }, { where: { id: teamId } });
+    }
+
     res.status(201).json({ 
       teacher, 
       message: 'Tạo giáo viên thành công. Mật khẩu mặc định: 123456' 
     });
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Cập nhật giáo viên
+exports.update = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fullName, email, subject, department, specialization, phoneNumber, teamId } = req.body;
+
+    console.log('Update teacher request:', { id, fullName, email, subject, teamId });
+
+    // Tìm giáo viên cần cập nhật
+    const teacher = await Teacher.findOne({
+      where: { userId: id },
+      include: [{
+        model: User,
+        as: 'user'
+      }]
+    });
+
+    if (!teacher) {
+      return res.status(404).json({ error: 'Không tìm thấy giáo viên' });
+    }
+
+    console.log('Found teacher:', teacher.fullName);
+
+    // Kiểm tra email trùng (ngoại trừ email hiện tại)
+    if (email !== teacher.email) {
+      const existingTeacher = await Teacher.findOne({ 
+        where: { 
+          email,
+          userId: { [Op.ne]: id }
+        } 
+      });
+      if (existingTeacher) {
+        return res.status(400).json({ error: 'Email giáo viên đã tồn tại' });
+      }
+
+      const existingUser = await User.findOne({ 
+        where: { 
+          email,
+          id: { [Op.ne]: id }
+        } 
+      });
+      if (existingUser) {
+        return res.status(400).json({ error: 'Email đã được sử dụng' });
+      }
+    }
+
+    // Cập nhật User record
+    await User.update({
+      name: fullName,
+      email,
+      subject
+    }, {
+      where: { id }
+    });
+
+    console.log('Updated user record');
+
+    // Cập nhật Teacher record
+    await Teacher.update({
+      fullName,
+      email,
+      subject,
+      department,
+      specialization,
+      phoneNumber
+    }, {
+      where: { userId: id }
+    });
+
+    console.log('Updated teacher record');
+
+    // Cập nhật team assignment
+    if (teamId) {
+      // Xóa assignment cũ của giáo viên này
+      await Team.update({ teacherId: null }, { where: { teacherId: id } });
+      
+      // Gán team mới
+      await Team.update({ teacherId: id }, { where: { id: teamId } });
+      console.log('Updated team assignment to:', teamId);
+    } else {
+      // Nếu không chọn team, xóa assignment
+      await Team.update({ teacherId: null }, { where: { teacherId: id } });
+      console.log('Removed team assignment');
+    }
+
+    res.json({ 
+      message: 'Cập nhật giáo viên thành công' 
+    });
+  } catch (err) {
+    console.error('Error updating teacher:', err);
     res.status(500).json({ error: err.message });
   }
 };

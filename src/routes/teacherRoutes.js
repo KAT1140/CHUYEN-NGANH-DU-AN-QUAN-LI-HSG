@@ -11,6 +11,9 @@ router.get('/', auth, controller.getAll);
 // Tạo giáo viên mới (chỉ admin)
 router.post('/', auth, requireAdmin, controller.create);
 
+// Cập nhật giáo viên (chỉ admin)
+router.put('/:id', auth, requireAdmin, controller.update);
+
 // Xóa giáo viên (chỉ admin)
 router.delete('/:id', auth, requireAdmin, controller.delete);
 

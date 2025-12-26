@@ -31,14 +31,25 @@
 - 🔐 **Bảo mật cao**: JWT authentication, middleware phân quyền, mã hóa mật khẩu bcrypt
 - 📱 **Responsive Design**: Tương thích hoàn hảo trên desktop, tablet và mobile
 
-## � UIh/UX Features
+## 🎨 UI/UX Features
 
 ### 🌟 Modern Design System
 - **Glass Morphism**: Translucent cards với backdrop blur effects
 - **Gradient Backgrounds**: Beautiful color gradients throughout the app
-- **Smooth Animations**: Fade-in, slide-in, và hover effects
+- **Dark Mode**: Complete dark/light theme switching với "Midnight Blue" theme
+- **Theme Toggle**: Accessible theme switcher với keyboard shortcut (Ctrl+Shift+T)
+- **Smooth Animations**: Fade-in, slide-in, và hover effects với transform animations
 - **Consistent Typography**: Unified font system và sizing
 - **Theme Variables**: Centralized color management với CSS variables
+
+### 🌙 Beautiful Dark Mode - "Midnight Blue" Theme
+- **Primary Colors**: Modern blue palette (#3b82f6, #60a5fa, #2563eb)
+- **Background**: Deep navy gradients (#0f172a → #1e293b → #334155)
+- **Typography**: Snow white (#f8fafc) với perfect contrast ratios
+- **Glass Effects**: Enhanced translucency với backdrop blur
+- **Hover Animations**: Smooth transforms và glow effects
+- **Calendar Header**: Redesigned với gradient backgrounds và glass morphism
+- **Accessibility**: WCAG compliant với proper contrast cho cả light và dark mode
 
 ### 📱 Responsive Components
 - **AppLayout**: Modern layout với gradient header và glass morphism
@@ -48,17 +59,21 @@
 
 ### 🎯 Enhanced User Experience
 - **Intuitive Navigation**: Clear menu structure và breadcrumbs
+- **Dark/Light Mode**: Automatic system preference detection với manual toggle
+- **Keyboard Shortcuts**: Theme switching (Ctrl+Shift+T) và navigation shortcuts
 - **Loading States**: Smooth loading animations và skeleton screens
 - **Error Handling**: User-friendly error messages và recovery options
-- **Keyboard Shortcuts**: Power user features với keyboard navigation
+- **Modern Calendar**: Redesigned header với glass morphism và gradient effects
+- **Accessibility**: WCAG compliant với proper contrast ratios cho cả light và dark mode
 
 ### 🎓 Phạm vi quản lý
 - **3 khối lớp**: 10, 11, 12 (27 đội tuyển tổng cộng)
-- **Đầy đủ dữ liệu**: 1 Admin + 27 Giáo viên + 91 Học sinh + 27 Teams
+- **Đầy đủ dữ liệu**: 1 Admin + 27 Giáo viên + 136 Học sinh + 27 Teams
+- **Dữ liệu đa năm**: HSG Quốc gia và Tỉnh từ 2021-2024, bao gồm cả học sinh đã tốt nghiệp
 - **Phân quyền chi tiết**: 
-  - **Admin**: Toàn quyền quản lý hệ thống
-  - **Giáo viên**: Quản lý đội phụ trách, lịch học & điểm số
-  - **Học sinh**: Xem lịch học & điểm số cá nhân
+  - **Admin**: Toàn quyền quản lý hệ thống, chỉnh sửa giáo viên và team
+  - **Giáo viên**: Quản lý đội phụ trách, lịch học & điểm số môn mình dạy
+  - **Học sinh**: Xem lịch học & điểm số cá nhân, điểm HSG các năm trước
 
 ## � Tech Stack
 
@@ -120,6 +135,7 @@
 
 ### 📅 Quản lý Lịch học
 - ✅ Navigation tháng với nút Previous/Next/Today
+- ✅ **Mô tả chi tiết**: Mỗi buổi học có mục tiêu và nội dung cụ thể
 - ✅ Thêm/sửa/xóa lịch học với date picker
 - ✅ Giáo viên: Quản lý lịch môn giảng dạy
 - ✅ Học sinh: Xem lịch học môn của đội
@@ -127,27 +143,36 @@
 
 ### 👨‍🏫 Quản lý Giáo viên
 - ✅ CRUD đầy đủ cho giáo viên (Admin only)
+- ✅ **Chỉnh sửa thông tin và đội phụ trách**: Form edit với dropdown chọn team
+- ✅ **Gán team thông minh**: Hiển thị team khả dụng, vô hiệu hóa team đã có giáo viên
 - ✅ Hiển thị môn dạy với color-coded tags
 - ✅ Cột "Đội phụ trách" với thông tin team
 - ✅ Chuyên môn chi tiết (VD: "Đại số, Hình học, Giải tích")
 - ✅ Tổ môn và thông tin liên hệ
 - ✅ Tự động tạo User account khi thêm giáo viên
+- ✅ **Modal UI cải tiến**: Centered modal với z-index phù hợp
 
 ### 👨‍🎓 Quản lý Học sinh & Đội
 - ✅ CRUD đầy đủ cho học sinh
 - ✅ Phân đội theo môn và khối (10/11/12)
+- ✅ **Thông tin học sinh đầy đủ**: Mã số, tên, khối, lớp, đội tuyển
 - ✅ Liên kết với tài khoản User
 - ✅ 27 đội tuyển (9 môn × 3 khối)
 - ✅ Mỗi đội có giáo viên phụ trách và học sinh
+- ✅ **Filter theo khối và loại lớp**: Lọc nhanh theo Khối 10/11/12 và Lớp A/T
 
 ### 🎯 Quản lý Điểm số
 - ✅ Thêm/sửa/xóa điểm thi cho học sinh
+- ✅ **Filter nâng cao**: Lọc theo loại kỳ thi, năm, khối, môn học
+- ✅ **Hiển thị giải thưởng**: Giải Nhất, Nhì, Ba, Khuyến khích dựa trên điểm số
+- ✅ **Dữ liệu đa năm**: Điểm HSG từ 2021-2024 cho cả học sinh hiện tại và cũ
 - ✅ Tìm kiếm theo: Học sinh, Đội, Tên bài thi
 - ✅ Ghi chú chi tiết cho từng điểm
 - ✅ Lưu ngày thi và metadata
 
 ### ⭐ Đánh giá & Nhận xét
 - ✅ Đánh giá học sinh theo tiêu chí
+- ✅ **Liên kết team-teacher**: Đánh giá được tạo bởi giáo viên của team học sinh
 - ✅ Ghi chú chi tiết và lịch sử
 - ✅ Lưu trữ đánh giá theo thời gian
 
@@ -176,8 +201,10 @@ cd client && npm run dev         # Frontend: http://localhost:5173
 
 ```
 Admin: namvokat@gmail.com / 123456
-Giáo viên: gv.toan1@hsg.edu.vn / 123456  
-Học sinh: hs1011_0@hsg.edu.vn / 123456
+Giáo viên: gv.toan1@hsg.edu.vn / 123456 (và 26 giáo viên khác)
+Học sinh: hs1011_0@hsg.edu.vn / 123456 (và 135 học sinh khác)
+
+Lưu ý: Tất cả tài khoản đều có mật khẩu là "123456"
 ```
 
 ### 📋 Cài đặt chi tiết
@@ -300,6 +327,9 @@ hsg-management-backend/
         │   ├── Evaluations.jsx  # Evaluation management
         │   └── Statistics.jsx   # Statistics & reports
         │
+        ├── 📁 contexts/         # React contexts
+        │   └── ThemeContext.jsx     # Dark/Light theme management
+        │
         ├── 📁 components/       # Reusable UI components
         │   ├── 📁 Layout/       # Layout components
         │   │   ├── AppLayout.jsx    # Main app layout
@@ -307,7 +337,8 @@ hsg-management-backend/
         │   │
         │   └── 📁 UI/           # UI components
         │       ├── AppCard.jsx      # Card component
-        │       └── AppCard.css      # Card styles
+        │       ├── AppCard.css      # Card styles
+        │       └── ThemeToggle.jsx  # Theme switcher component
         │
         ├── 📁 utils/            # Utility functions
         │   ├── api.js           # API client
@@ -325,11 +356,13 @@ hsg-management-backend/
 ```
 📁 UI System/
 ├── 🎨 GlobalTheme.css           # CSS variables, utilities, animations
-├── 🏗️ AppLayout.jsx            # Main layout với gradient header
+├── �️ ThemeContext.jsx          # Dark/Light mode với "Midnight Blue" theme
+├── �️ AppaLayout.jsx            # Main layout với gradient header
 ├── 🃏 AppCard.jsx              # Flexible card component
 │   ├── Variants: default, glass, gradient, stats
 │   ├── Sizes: small, default, large
 │   └── Features: hover effects, loading states
+├── 🎯 ThemeToggle.jsx          # Theme switcher với keyboard shortcut
 └── 📱 Responsive Design         # Mobile-first approach
 ```
 
@@ -351,8 +384,9 @@ Email: namvokat@gmail.com
 - **Thêm giáo viên**: Admin có thể thêm giáo viên mới (tự động tạo User account)
 
 ### 👨‍🎓 Quản lý Học sinh
-- **91 học sinh**: 81 có team (3/team) + 10 chưa có team
-- **Thông tin đầy đủ**: Tên, lớp, team, thông tin liên hệ
+- **Thông tin đầy đủ**: Mã số, tên, khối (10/11/12), lớp (A/T), đội tuyển
+- **Form chọn lớp có cấu trúc**: Dropdown phân nhóm theo khối với đầy đủ tùy chọn A và T
+- **Filter thông minh**: Lọc theo khối (10/11/12) và loại lớp (A/T)
 - **Liên kết User**: Mỗi học sinh có tài khoản đăng nhập riêng
 - **Flexible assignment**: Có thể gán học sinh vào team bất kỳ lúc nào
 
@@ -397,7 +431,8 @@ node scripts/fullSetup.js
 - [x] **Modern Glass Morphism Design** - Completed ✅
 - [x] **Responsive Layout System** - Completed ✅
 - [x] **Consistent Theme Variables** - Completed ✅
-- [ ] **Dark Mode Support** - Coming soon 🌙
+- [x] **Dark Mode Support** - "Midnight Blue" theme completed ✅
+- [x] **Calendar Header Redesign** - Glass morphism và gradient effects ✅
 - [ ] **Advanced Animations** - Micro-interactions và page transitions
 
 ### 🚀 Technical Enhancements

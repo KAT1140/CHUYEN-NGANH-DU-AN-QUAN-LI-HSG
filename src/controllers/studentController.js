@@ -48,7 +48,7 @@ exports.getAll = async (req, res) => {
 // Tạo học sinh mới
 exports.create = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, grade, className } = req.body;
     
     // Kiểm tra email trùng
     const existingUser = await User.findOne({ where: { email } });
@@ -65,6 +65,17 @@ exports.create = async (req, res) => {
       role: 'user'
     });
 
+    // Tạo Student record nếu có thông tin grade/className
+    if (grade || className) {
+      await Student.create({
+        name,
+        studentId: email,
+        grade,
+        className,
+        userId: newUser.id
+      });
+    }
+
     // Trả về user không có password
     const { password: p, ...userWithoutPass } = newUser.toJSON();
     res.status(201).json({ student: userWithoutPass, message: 'Tạo học sinh thành công' });
@@ -77,7 +88,7 @@ exports.create = async (req, res) => {
 exports.update = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, password } = req.body;
+    const { name, email, password, grade, className } = req.body;
 
     const student = await User.findOne({ where: { id, role: 'user' } });
     if (!student) return res.status(404).json({ error: 'Không tìm thấy học sinh' });
@@ -97,11 +108,29 @@ exports.update = async (req, res) => {
 
     await student.update(updateData);
     
-    // Cập nhật thông tin bên bảng Student nếu có liên kết (để đồng bộ tên/mã)
-    await Student.update(
-      { name: name, studentId: email }, 
-      { where: { userId: id } }
-    );
+    // Cập nhật hoặc tạo Student record
+    const existingStudent = await Student.findOne({ where: { userId: id } });
+    if (existingStudent) {
+      // Cập nhật Student record hiện có
+      await Student.update(
+        { 
+          name: name, 
+          studentId: email,
+          grade: grade,
+          className: className
+        }, 
+        { where: { userId: id } }
+      );
+    } else if (grade || className) {
+      // Tạo Student record mới nếu chưa có
+      await Student.create({
+        name: name,
+        studentId: email,
+        grade: grade,
+        className: className,
+        userId: id
+      });
+    }
 
     res.json({ message: 'Cập nhật thành công' });
   } catch (err) {

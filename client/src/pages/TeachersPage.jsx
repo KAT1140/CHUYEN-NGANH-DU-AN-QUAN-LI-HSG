@@ -1,7 +1,7 @@
 // File: client/src/pages/Teachers.jsx
 import React, { useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, message, Space, Tag, Select, Card, Statistic, Row, Col } from 'antd';
-import { UserOutlined, ReloadOutlined, PlusOutlined, BookOutlined } from '@ant-design/icons';
+import { UserOutlined, ReloadOutlined, PlusOutlined, BookOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons';
 import AppLayout from '../components/Layout/AppLayout';
 import AppCard from '../components/UI/AppCard';
 
@@ -10,9 +10,12 @@ const API_BASE = import.meta.env.VITE_API_BASE || '/api';
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]);
   const [filteredTeachers, setFilteredTeachers] = useState([]);
+  const [teams, setTeams] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState('all');
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form] = Form.useForm();
 
   const userRole = localStorage.getItem('userRole') || 'user';
@@ -40,8 +43,25 @@ const Teachers = () => {
     }
   };
 
+  const fetchTeams = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/teams`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      console.log('Fetched teams:', data.teams?.length || 0);
+      setTeams(data.teams || []);
+    } catch (err) {
+      console.error('Lỗi khi tải danh sách đội:', err);
+    }
+  };
+
   useEffect(() => {
     fetchTeachers();
+    fetchTeams();
   }, []);
 
   // Filter teachers by subject
@@ -60,11 +80,17 @@ const Teachers = () => {
 
   const onCreate = async (values) => {
     try {
-      message.loading({ content: 'Đang tạo giáo viên...', key: 'createTeacher' });
+      const loadingKey = isEditMode ? 'updateTeacher' : 'createTeacher';
+      const loadingText = isEditMode ? 'Đang cập nhật giáo viên...' : 'Đang tạo giáo viên...';
+      
+      message.loading({ content: loadingText, key: loadingKey });
       
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/teachers`, {
-        method: 'POST',
+      const url = isEditMode ? `${API_BASE}/teachers/${editingId}` : `${API_BASE}/teachers`;
+      const method = isEditMode ? 'PUT' : 'POST';
+      
+      const res = await fetch(url, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -75,17 +101,44 @@ const Teachers = () => {
       const data = await res.json();
       
       if (data.error) {
-        message.error({ content: data.error, key: 'createTeacher' });
+        message.error({ content: data.error, key: loadingKey });
         return;
       }
 
-      message.success({ content: 'Tạo giáo viên thành công!', key: 'createTeacher' });
+      const successText = isEditMode ? 'Cập nhật giáo viên thành công!' : 'Tạo giáo viên thành công!';
+      message.success({ content: successText, key: loadingKey });
+      
       setIsModalVisible(false);
       form.resetFields();
+      setIsEditMode(false);
+      setEditingId(null);
       fetchTeachers();
     } catch (err) {
-      message.error({ content: 'Lỗi khi tạo giáo viên', key: 'createTeacher' });
+      const errorText = isEditMode ? 'Lỗi khi cập nhật giáo viên' : 'Lỗi khi tạo giáo viên';
+      message.error({ content: errorText, key: isEditMode ? 'updateTeacher' : 'createTeacher' });
     }
+  };
+
+  const handleEdit = (record) => {
+    setIsEditMode(true);
+    setEditingId(record.id);
+    form.setFieldsValue({
+      fullName: record.name,
+      email: record.email,
+      subject: record.subject,
+      department: record.department,
+      specialization: record.specialization,
+      phoneNumber: record.phoneNumber,
+      teamId: record.team ? record.team.id : null
+    });
+    setIsModalVisible(true);
+  };
+
+  const handleAdd = () => {
+    setIsEditMode(false);
+    setEditingId(null);
+    form.resetFields();
+    setIsModalVisible(true);
   };
 
   const handleDelete = async (id, name) => {
@@ -211,13 +264,23 @@ const Teachers = () => {
       key: 'action',
       render: (_, record) => (
         canManageTeachers && (
-          <Button 
-            danger 
-            size="small" 
-            onClick={() => handleDelete(record.id, record.name)}
-          >
-            Xóa
-          </Button>
+          <Space>
+            <Button 
+              size="small" 
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+            >
+              Sửa
+            </Button>
+            <Button 
+              danger 
+              size="small" 
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record.id, record.name)}
+            >
+              Xóa
+            </Button>
+          </Space>
         )
       )
     }
@@ -237,7 +300,7 @@ const Teachers = () => {
               <Button 
                 type="primary" 
                 icon={<PlusOutlined />} 
-                onClick={() => setIsModalVisible(true)}
+                onClick={handleAdd}
               >
                 Thêm giáo viên
               </Button>
@@ -288,14 +351,20 @@ const Teachers = () => {
       </AppCard>
 
       <Modal
-        title="Thêm giáo viên mới"
+        title={isEditMode ? "Chỉnh sửa giáo viên" : "Thêm giáo viên mới"}
         open={isModalVisible}
         footer={null}
         onCancel={() => {
           setIsModalVisible(false);
+          setIsEditMode(false);
+          setEditingId(null);
           form.resetFields();
         }}
         destroyOnClose
+        centered
+        width={600}
+        zIndex={1060}
+        maskClosable={false}
       >
         <Form form={form} layout="vertical" onFinish={onCreate}>
           <Form.Item 
@@ -349,9 +418,40 @@ const Teachers = () => {
             <Input placeholder="0901234567" />
           </Form.Item>
 
+          <Form.Item 
+            name="teamId" 
+            label="Đội phụ trách"
+          >
+            <Select 
+              placeholder="Chọn đội phụ trách"
+              allowClear
+              showSearch
+              optionFilterProp="children"
+              filterOption={(input, option) =>
+                option?.children?.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+            >
+              {teams.map(team => {
+                const isAssigned = teachers.some(t => 
+                  t.team && t.team.id === team.id && t.id !== editingId
+                );
+                return (
+                  <Select.Option 
+                    key={team.id} 
+                    value={team.id}
+                    disabled={isAssigned}
+                  >
+                    {team.name} - {team.subject} (Khối {team.grade})
+                    {isAssigned && ' - Đã có giáo viên'}
+                  </Select.Option>
+                );
+              })}
+            </Select>
+          </Form.Item>
+
           <Form.Item>
             <Button type="primary" htmlType="submit" style={{ width: '100%' }}>
-              Tạo giáo viên
+              {isEditMode ? 'Cập nhật giáo viên' : 'Tạo giáo viên'}
             </Button>
           </Form.Item>
         </Form>

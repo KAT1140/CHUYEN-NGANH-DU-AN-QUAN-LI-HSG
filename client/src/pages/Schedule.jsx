@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Calendar, Button, Modal, Form, Input, Select, DatePicker, message, Tooltip, Space, Tag } from 'antd'
-import { PlusOutlined, DeleteOutlined, ReloadOutlined, EditOutlined, ClockCircleOutlined, LeftOutlined, RightOutlined, InfoCircleOutlined } from '@ant-design/icons'
+import { PlusOutlined, DeleteOutlined, ReloadOutlined, EditOutlined, ClockCircleOutlined, LeftOutlined, RightOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
 import { useNavigate } from 'react-router-dom'
 import AppLayout from '../components/Layout/AppLayout'
@@ -403,14 +403,6 @@ export default function Schedule(){
                     type="text" 
                     icon={<RightOutlined />} 
                     onClick={goToNextMonth}
-                  />
-                </Tooltip>
-                <Tooltip title="Phím tắt: ← → để chuyển tháng, Home để về hôm nay">
-                  <Button 
-                    className="dashboard-nav-button"
-                    type="text" 
-                    icon={<InfoCircleOutlined />} 
-                    style={{ color: '#999' }}
                   />
                 </Tooltip>
               </div>

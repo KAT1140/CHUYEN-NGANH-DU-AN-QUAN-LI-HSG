@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom'
 import { Layout, Menu, Button, Space } from 'antd'
+import ThemeToggle from './components/UI/ThemeToggle'
 import './styles/MainContent.css'
 
 // Import đầy đủ các trang
@@ -12,7 +13,6 @@ import Teams from './pages/Teams'
 import Scores from './pages/Scores'         
 import Home from './pages/Home'           
 import Welcome from './pages/Welcome'     // <--- Import Welcome page
-import DangKi from './pages/dangki.jsx'
 import Evaluations from './pages/Evaluations' // <--- Đã import Đánh giá
 import Students from './pages/Students'       // <--- Đã import Học sinh
 import TeachersPage from './pages/TeachersPage' // <--- Import Giáo viên
@@ -23,11 +23,19 @@ import { getToken, getUser, removeToken } from './utils/auth'
 const { Header, Content } = Layout
 
 export default function MainContent(){ 
-  const [user, setUser] = useState(getUser())
+  const [user, setUser] = useState(null) // Mặc định null
   const navigate = useNavigate() 
 
   // Chỉ hiện menu "Học sinh" nếu là Giáo viên/Admin
   const canManage = user && user.role !== 'user';
+
+  // Load user từ localStorage sau khi component mount
+  useEffect(() => {
+    const savedUser = getUser();
+    if (savedUser) {
+      setUser(savedUser);
+    }
+  }, []);
 
   // Lắng nghe sự kiện đăng nhập/đăng xuất để cập nhật menu ngay lập tức
   useEffect(() => {
@@ -79,11 +87,12 @@ export default function MainContent(){
           {user ? (
             <div className="main-user-info">
               <span className="main-username">Xin chào, <strong>{user.name}</strong></span>
+              <ThemeToggle size="middle" style={{ marginLeft: '12px', marginRight: '12px' }} />
               <Button size="small" onClick={logout} danger>Đăng xuất</Button>
             </div>
           ) : (
             <Space> 
-              <Link to="/dangki"><Button>Đăng Ký</Button></Link>
+              <ThemeToggle size="middle" />
               <Link to="/login"><Button type="primary">Đăng Nhập</Button></Link>
             </Space>
           )}
@@ -94,7 +103,6 @@ export default function MainContent(){
             <Route path="/" element={user ? <Home/> : <Welcome/>} />
             <Route path="/welcome" element={<Welcome/>} />
             <Route path="/login" element={<LoginPage/>} />
-            <Route path="/dangki" element={<DangKi/>} />
             
             <Route path="/dashboard" element={<Protected><Dashboard/></Protected>} />
             <Route path="/teams" element={<Protected><Teams/></Protected>} />

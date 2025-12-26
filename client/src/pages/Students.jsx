@@ -1,6 +1,6 @@
 // File: client/src/pages/Students.jsx
 import React, { useState, useEffect } from 'react'
-import { Table, Button, Modal, Form, Input, Space, message, Tag } from 'antd'
+import { Table, Button, Modal, Form, Input, Space, message, Tag, Select } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, ReloadOutlined, UserOutlined } from '@ant-design/icons'
 import { getAllStudents, createStudent, updateStudent, deleteStudent } from '../utils/api'
 import AppLayout from '../components/Layout/AppLayout'
@@ -74,6 +74,8 @@ export default function Students() {
     form.setFieldsValue({
       name: record.name,
       email: record.email,
+      grade: record.grade,
+      className: record.className,
       password: '' // Không hiện password cũ
     });
     setIsModalVisible(true);
@@ -86,7 +88,6 @@ export default function Students() {
   }
 
   const columns = [
-    { title: 'ID', dataIndex: 'id', width: 60 },
     {
       title: 'Mã số',
       dataIndex: 'studentId',
@@ -104,7 +105,46 @@ export default function Students() {
       dataIndex: 'name',
       render: (text) => <b>{text}</b>
     },
-    { title: 'Ngày tạo', dataIndex: 'createdAt', render: (d) => new Date(d).toLocaleDateString('vi-VN') },
+    {
+      title: 'Khối',
+      dataIndex: 'grade',
+      key: 'grade',
+      render: (grade) => {
+        if (!grade) return <Tag color="default">Chưa xác định</Tag>;
+        const colors = {
+          '10': 'green',
+          '11': 'orange', 
+          '12': 'red'
+        };
+        return <Tag color={colors[grade] || 'blue'}>Khối {grade}</Tag>;
+      },
+      filters: [
+        { text: 'Khối 10', value: '10' },
+        { text: 'Khối 11', value: '11' },
+        { text: 'Khối 12', value: '12' }
+      ],
+      onFilter: (value, record) => record.grade === value,
+      sorter: (a, b) => (a.grade || '').localeCompare(b.grade || '')
+    },
+    {
+      title: 'Lớp',
+      dataIndex: 'className',
+      key: 'className',
+      render: (className) => {
+        if (!className) return <span style={{ color: '#999' }}>Chưa có lớp</span>;
+        
+        // Color code based on class type
+        const isAClass = className.includes('A');
+        const color = isAClass ? 'blue' : 'green';
+        return <Tag color={color}>{className}</Tag>;
+      },
+      filters: [
+        { text: 'Lớp A', value: 'A' },
+        { text: 'Lớp T', value: 'T' }
+      ],
+      onFilter: (value, record) => record.className && record.className.includes(value),
+      sorter: (a, b) => (a.className || '').localeCompare(b.className || '')
+    },
     {
       title: 'Thao tác',
       key: 'action',
@@ -158,15 +198,18 @@ export default function Students() {
           </Space>
         }
       >
-        {/* Search Section */}
+        {/* Search and Filter Section */}
         <div style={{ marginBottom: 24 }}>
-          <Input.Search
-            allowClear
-            placeholder="Tìm kiếm theo tên hoặc mã số"
-            value={searchText}
-            onChange={e => setSearchText(e.target.value)}
-            style={{ width: 300 }}
-          />
+          <Space>
+            <Input.Search
+              allowClear
+              placeholder="Tìm kiếm theo tên hoặc mã số"
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+              style={{ width: 300 }}
+            />
+            <span>Tổng: <b>{filteredStudents.length}</b> học sinh</span>
+          </Space>
         </div>
 
         <Table 
@@ -205,6 +248,59 @@ export default function Students() {
             rules={[{ required: true, message: 'Vui lòng nhập mã số' }]}
           >
             <Input placeholder="HS12345" disabled={!!editingId} /> {/* Có thể cho phép sửa email nếu muốn, bỏ disabled đi */}
+          </Form.Item>
+
+          <Form.Item 
+            name="grade" 
+            label="Khối"
+          >
+            <Select placeholder="Chọn khối" allowClear>
+              <Select.Option value="10">Khối 10</Select.Option>
+              <Select.Option value="11">Khối 11</Select.Option>
+              <Select.Option value="12">Khối 12</Select.Option>
+            </Select>
+          </Form.Item>
+
+          <Form.Item 
+            name="className" 
+            label="Lớp"
+          >
+            <Select 
+              placeholder="Chọn lớp" 
+              allowClear
+              showSearch
+              optionFilterProp="children"
+            >
+              {/* Khối 10 */}
+              <Select.OptGroup label="Khối 10">
+                <Select.Option value="10A1">10A1</Select.Option>
+                <Select.Option value="10A2">10A2</Select.Option>
+                <Select.Option value="10A3">10A3</Select.Option>
+                <Select.Option value="10T1">10T1</Select.Option>
+                <Select.Option value="10T2">10T2</Select.Option>
+                <Select.Option value="10T3">10T3</Select.Option>
+              </Select.OptGroup>
+              
+              {/* Khối 11 */}
+              <Select.OptGroup label="Khối 11">
+                <Select.Option value="11A1">11A1</Select.Option>
+                <Select.Option value="11A2">11A2</Select.Option>
+                <Select.Option value="11A3">11A3</Select.Option>
+                <Select.Option value="11T1">11T1</Select.Option>
+                <Select.Option value="11T2">11T2</Select.Option>
+                <Select.Option value="11T3">11T3</Select.Option>
+              </Select.OptGroup>
+              
+              {/* Khối 12 */}
+              <Select.OptGroup label="Khối 12">
+                <Select.Option value="12A1">12A1</Select.Option>
+                <Select.Option value="12A2">12A2</Select.Option>
+                <Select.Option value="12A3">12A3</Select.Option>
+                <Select.Option value="12T1">12T1</Select.Option>
+                <Select.Option value="12T2">12T2</Select.Option>
+                <Select.Option value="12T3">12T3</Select.Option>
+              </Select.OptGroup>
+            </Select>
           </Form.Item>
 
           <Form.Item 

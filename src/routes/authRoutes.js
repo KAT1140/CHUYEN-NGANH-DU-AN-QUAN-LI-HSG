@@ -8,7 +8,7 @@ const Student = require('../models/student');
 const Team = require('../models/Team');
 
 router.post('/login', controller.login);
-router.post('/register', controller.register);
+// router.post('/register', controller.register); // Disabled registration
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findByPk(req.user.id, {

@@ -32,12 +32,40 @@
 }
 
 .app-card--glass {
-  background: rgba(255, 255, 255, 0.95);
+  background: var(--glass-bg);
   backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
 }
 
 .app-card--gradient {
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--primary-bg) 100%);
+}
+
+/* Dark Mode Enhancements */
+.dark-mode .app-card--glass {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+  backdrop-filter: blur(25px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark-mode .app-card .ant-card-head {
+  background: linear-gradient(135deg, rgba(64, 169, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+  border-bottom: 1px solid rgba(58, 58, 92, 0.5) !important;
+}
+
+.dark-mode .app-card-title-text {
+  color: #ffffff !important;
+}
+
+.dark-mode .app-card-subtitle {
+  color: #e6e6e6 !important;
+}
+
+.dark-mode .app-card--hoverable:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4) !important;
+  border-color: rgba(64, 169, 255, 0.4) !important;
 }
 
 /* Sizes */

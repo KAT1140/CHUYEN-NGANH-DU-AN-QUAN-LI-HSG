@@ -1,6 +1,6 @@
 import React from 'react'
 import { Button, Row, Col, Typography, Card, Space, Timeline, Tag } from 'antd'
-import { LoginOutlined, UserAddOutlined, TrophyOutlined, BookOutlined, TeamOutlined, CalendarOutlined, StarOutlined, BarChartOutlined } from '@ant-design/icons'
+import { LoginOutlined, TrophyOutlined, BookOutlined, TeamOutlined, CalendarOutlined, StarOutlined, BarChartOutlined } from '@ant-design/icons'
 import { Link } from 'react-router-dom'
 import AppLayout from '../components/Layout/AppLayout'
 import AppCard from '../components/UI/AppCard'
@@ -107,11 +107,6 @@ export default function Welcome() {
             <Link to="/login">
               <Button type="primary" size="large" icon={<LoginOutlined />}>
                 Đăng nhập
-              </Button>
-            </Link>
-            <Link to="/register">
-              <Button size="large" icon={<UserAddOutlined />}>
-                Đăng ký tài khoản
               </Button>
             </Link>
           </Space>
