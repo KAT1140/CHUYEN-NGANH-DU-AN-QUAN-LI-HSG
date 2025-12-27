@@ -26,6 +26,78 @@ export default function Scores(){
   const [selectedExamType, setSelectedExamType] = useState('all')
   const [selectedYear, setSelectedYear] = useState('')
   
+  // Get available exam types based on selected year
+  const getAvailableExamTypes = () => {
+    const year = parseInt(selectedYear);
+    const isOldYear = year && year < 2024; // Các năm trước 2024
+    
+    const examTypes = [
+      { value: 'all', label: 'Tất cả kỳ thi' },
+      { value: 'hsg', label: 'HSG Cấp tỉnh' },
+      { value: 'hsg-national', label: 'HSG Quốc gia' }
+    ];
+    
+    // Chỉ thêm "Kiểm tra định kỳ" nếu không phải năm cũ
+    if (!isOldYear) {
+      examTypes.push({ value: 'periodic', label: 'Kiểm tra định kỳ' });
+    }
+    
+    return examTypes;
+  };
+
+  // Reset exam type when year changes to old year and current type is periodic
+  useEffect(() => {
+    const year = parseInt(selectedYear);
+    const isOldYear = year && year < 2024;
+    
+    if (isOldYear && selectedExamType === 'periodic') {
+      setSelectedExamType('all');
+      // Immediately filter with 'all' exam type for old year
+      filterDataWithParams('all', selectedGrade, selectedSubject, selectedYear);
+    }
+  }, [selectedYear]);
+
+  // Combined filter function
+  const filterDataWithParams = (examType, grade, subject, year) => {
+    let filtered = allScores;
+    
+    // Filter by exam type
+    if (examType === 'hsg') {
+      filtered = filtered.filter(s => s.testName === 'HSG cấp tỉnh');
+    } else if (examType === 'hsg-national') {
+      filtered = filtered.filter(s => s.testName?.includes('HSG Quốc gia'));
+    } else if (examType === 'periodic') {
+      filtered = filtered.filter(s => 
+        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
+      );
+    }
+    // 'all' shows everything
+    
+    // Filter by grade
+    if (grade !== 'all') {
+      filtered = filtered.filter(s => s.member?.grade?.toString() === grade);
+    }
+    
+    // Filter by subject
+    if (subject !== 'all') {
+      filtered = filtered.filter(s => s.member?.team?.subject === subject);
+    }
+    
+    // Filter by year
+    if (year) {
+      filtered = filtered.filter(s => {
+        if (s.examDate) {
+          const examYear = new Date(s.examDate).getFullYear();
+          return examYear.toString() === year;
+        }
+        return false;
+      });
+    }
+    
+    setScores(filtered);
+    console.log(`Filtered with params - examType: ${examType}, grade: ${grade}, subject: ${subject}, year: ${year}:`, filtered.length, 'scores');
+  };
+
   // Get user role
   const userRole = localStorage.getItem('userRole') || 'user'
   const canAddScore = userRole !== 'user'
@@ -88,105 +160,23 @@ export default function Scores(){
 
   // Filter functions
   const filterByExamType = (type) => {
-    let filtered = allScores
-    
-    if (type === 'hsg') {
-      filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
-    } else if (type === 'hsg-national') {
-      filtered = allScores.filter(s => s.testName?.includes('HSG Quốc gia'))
-    } else if (type === 'periodic') {
-      filtered = allScores.filter(s => 
-        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
-      )
-    }
-    // 'all' shows everything
-    
-    setScores(filtered)
-    setSelectedExamType(type)
-    console.log(`Filtered ${type}:`, filtered.length, 'scores')
+    setSelectedExamType(type);
+    filterDataWithParams(type, selectedGrade, selectedSubject, selectedYear);
   }
 
   const filterByGrade = (grade) => {
-    let filtered = allScores
-    
-    if (selectedExamType === 'hsg') {
-      filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
-    } else if (selectedExamType === 'hsg-national') {
-      filtered = allScores.filter(s => s.testName?.includes('HSG Quốc gia'))
-    } else if (selectedExamType === 'periodic') {
-      filtered = allScores.filter(s => 
-        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
-      )
-    }
-    
-    if (grade !== 'all') {
-      filtered = filtered.filter(s => s.member?.grade?.toString() === grade)
-    }
-    
-    setScores(filtered)
-    setSelectedGrade(grade)
-    console.log(`Filtered grade ${grade}:`, filtered.length, 'scores')
+    setSelectedGrade(grade);
+    filterDataWithParams(selectedExamType, grade, selectedSubject, selectedYear);
   }
 
   const filterBySubject = (subject) => {
-    let filtered = allScores
-    
-    if (selectedExamType === 'hsg') {
-      filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
-    } else if (selectedExamType === 'hsg-national') {
-      filtered = allScores.filter(s => s.testName?.includes('HSG Quốc gia'))
-    } else if (selectedExamType === 'periodic') {
-      filtered = allScores.filter(s => 
-        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
-      )
-    }
-    
-    if (selectedGrade !== 'all') {
-      filtered = filtered.filter(s => s.member?.grade?.toString() === selectedGrade)
-    }
-    
-    if (subject !== 'all') {
-      filtered = filtered.filter(s => s.member?.team?.subject === subject)
-    }
-    
-    setScores(filtered)
-    setSelectedSubject(subject)
-    console.log(`Filtered subject ${subject}:`, filtered.length, 'scores')
+    setSelectedSubject(subject);
+    filterDataWithParams(selectedExamType, selectedGrade, subject, selectedYear);
   }
 
   const filterByYear = (year) => {
-    let filtered = allScores
-    
-    if (selectedExamType === 'hsg') {
-      filtered = allScores.filter(s => s.testName === 'HSG cấp tỉnh')
-    } else if (selectedExamType === 'hsg-national') {
-      filtered = allScores.filter(s => s.testName?.includes('HSG Quốc gia'))
-    } else if (selectedExamType === 'periodic') {
-      filtered = allScores.filter(s => 
-        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
-      )
-    }
-    
-    if (selectedGrade !== 'all') {
-      filtered = filtered.filter(s => s.member?.grade?.toString() === selectedGrade)
-    }
-    
-    if (selectedSubject !== 'all') {
-      filtered = filtered.filter(s => s.member?.team?.subject === selectedSubject)
-    }
-    
-    // Luôn lọc theo năm được chọn
-    filtered = filtered.filter(s => {
-      if (s.examDate) {
-        const examYear = new Date(s.examDate).getFullYear();
-        return examYear.toString() === year;
-      }
-      return false;
-    })
-    
-    setScores(filtered)
-    setSelectedYear(year)
-    console.log(`Filtered year ${year}:`, filtered.length, 'scores')
+    setSelectedYear(year);
+    filterDataWithParams(selectedExamType, selectedGrade, selectedSubject, year);
   }
 
   // Get unique values for filters
@@ -252,6 +242,13 @@ export default function Scores(){
     fetchTeamsData()
     fetchStudents()
   }, [])
+
+  // Apply filters when allScores changes
+  useEffect(() => {
+    if (allScores.length > 0) {
+      filterDataWithParams(selectedExamType, selectedGrade, selectedSubject, selectedYear);
+    }
+  }, [allScores]);
 
   const handleAddScore = async (values) => {
     try {
@@ -365,7 +362,15 @@ export default function Scores(){
     {
       title: 'Bài kiểm tra',
       dataIndex: 'testName',
-      key: 'testName'
+      key: 'testName',
+      render: (testName) => {
+        if (!testName) return 'N/A';
+        
+        // Loại bỏ phần môn học khỏi tên bài kiểm tra
+        // Ví dụ: "Kiểm tra tháng 10 - Toán" → "Kiểm tra tháng 10"
+        const cleanTestName = testName.split(' - ')[0];
+        return cleanTestName;
+      }
     },
     {
       title: 'Loại kỳ thi',
@@ -458,6 +463,65 @@ export default function Scores(){
       key: 'examDate',
       render: (date) => date ? dayjs(date).format('DD/MM/YYYY') : 'N/A'
     },
+    {
+      title: 'Ghi chú',
+      dataIndex: 'notes',
+      key: 'notes',
+      render: (notes, record) => {
+        if (!notes) return '-';
+        
+        // Đối với kiểm tra hằng tháng, hiển thị "Kiểm tra định kỳ tháng X"
+        if (record.testName?.includes('Kiểm tra tháng')) {
+          const monthMatch = record.testName.match(/tháng (\d+)/);
+          const month = monthMatch ? monthMatch[1] : '';
+          return (
+            <span 
+              title={`Kiểm tra định kỳ tháng ${month}`}
+              style={{ 
+                maxWidth: '150px', 
+                overflow: 'hidden', 
+                textOverflow: 'ellipsis', 
+                whiteSpace: 'nowrap',
+                display: 'inline-block'
+              }}
+            >
+              Kiểm tra định kỳ tháng {month}
+            </span>
+          );
+        }
+        
+        // Đối với các kiểm tra khác, hiển thị loại kiểm tra
+        if (record.testName?.includes('Kiểm tra đầu năm')) {
+          return <span>Kiểm tra đầu năm học</span>;
+        } else if (record.testName?.includes('Kiểm tra giữa kỳ 1')) {
+          return <span>Kiểm tra giữa học kỳ 1</span>;
+        } else if (record.testName?.includes('Kiểm tra cuối kỳ 1')) {
+          return <span>Kiểm tra cuối học kỳ 1</span>;
+        } else if (record.testName?.includes('Kiểm tra đầu kỳ 2')) {
+          return <span>Kiểm tra đầu học kỳ 2</span>;
+        } else if (record.testName?.includes('Kiểm tra giữa kỳ 2')) {
+          return <span>Kiểm tra giữa học kỳ 2</span>;
+        } else if (record.testName?.includes('Kiểm tra cuối năm')) {
+          return <span>Kiểm tra cuối năm học</span>;
+        }
+        
+        // Mặc định hiển thị ghi chú gốc (rút gọn)
+        return (
+          <span 
+            title={notes} 
+            style={{ 
+              maxWidth: '120px', 
+              overflow: 'hidden', 
+              textOverflow: 'ellipsis', 
+              whiteSpace: 'nowrap',
+              display: 'inline-block'
+            }}
+          >
+            {notes.replace('Kiểm tra định kỳ môn ', '').replace('Kiểm tra định kỳ', 'Định kỳ')}
+          </span>
+        );
+      }
+    },
     // Chỉ hiển thị cột thao tác cho admin/teacher
     ...(canAddScore ? [{
       title: 'Thao tác',
@@ -523,10 +587,11 @@ export default function Scores(){
               style={{ width: 180 }}
               placeholder="Chọn kỳ thi"
             >
-              <Select.Option value="all">Tất cả kỳ thi</Select.Option>
-              <Select.Option value="hsg">HSG Cấp tỉnh</Select.Option>
-              <Select.Option value="hsg-national">HSG Quốc gia</Select.Option>
-              <Select.Option value="periodic">Kiểm tra định kỳ</Select.Option>
+              {getAvailableExamTypes().map(type => (
+                <Select.Option key={type.value} value={type.value}>
+                  {type.label}
+                </Select.Option>
+              ))}
             </Select>
 
             <Select

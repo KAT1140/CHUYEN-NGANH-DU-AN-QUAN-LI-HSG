@@ -1,8 +1,9 @@
 // File: client/src/MainContent.jsx
 
 import React, { useEffect, useState } from 'react'
-import { Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom'
 import { Layout, Menu, Button, Space } from 'antd'
+import { MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons'
 import ThemeToggle from './components/UI/ThemeToggle'
 import './styles/MainContent.css'
 
@@ -25,9 +26,15 @@ const { Header, Content } = Layout
 export default function MainContent(){ 
   const [user, setUser] = useState(null) // Mặc định null
   const navigate = useNavigate() 
+  const location = useLocation() // Để theo dõi route changes
 
   // Chỉ hiện menu "Học sinh" nếu là Giáo viên/Admin
   const canManage = user && user.role !== 'user';
+
+  // Function để check trang hiện tại
+  const isCurrentPage = (path) => {
+    return location.pathname === path;
+  };
 
   // Load user từ localStorage sau khi component mount
   useEffect(() => {
@@ -63,26 +70,40 @@ export default function MainContent(){
   return (
       <Layout>
         <Header className="main-header">
-          <Link to="/" className="main-logo-link">
-            <div className="main-logo-text">HSG Manager</div>
-          </Link>
+          <div className="main-header-left">
+            <Link to="/" className="main-logo-link">
+              <div className="main-logo-text">HSG Manager</div>
+            </Link>
+          </div>
 
-          {/* MENU CHÍNH - Đã bao gồm Đánh Giá */}
-          <Menu theme="dark" mode="horizontal" selectable={false} className="main-menu">
-            <Menu.Item key="2"><Link to="/dashboard">Xem Lịch</Link></Menu.Item>
-            <Menu.Item key="3"><Link to="/teams">Đội Tuyển</Link></Menu.Item>
-            <Menu.Item key="4"><Link to="/scores">Điểm Số</Link></Menu.Item>
-            <Menu.Item key="5"><Link to="/evaluations">Đánh Giá</Link></Menu.Item>
-            <Menu.Item key="8"><Link to="/statistics">Thống Kê</Link></Menu.Item>
-            
-            {/* Menu Quản lý học sinh (Chỉ Teacher/Admin thấy) */}
-            {canManage && (
-              <Menu.Item key="6"><Link to="/students">Học Sinh</Link></Menu.Item>
-            )}
-            {canManage && (
-              <Menu.Item key="7"><Link to="/teachers">Giáo Viên</Link></Menu.Item>
-            )}
-          </Menu>
+          {/* MENU CHÍNH - Ẩn menu item của trang hiện tại */}
+          {user && (
+            <Menu theme="dark" mode="horizontal" selectable={false} className="main-menu">
+              {!isCurrentPage('/dashboard') && (
+                <Menu.Item key="2"><Link to="/dashboard">Xem Lịch</Link></Menu.Item>
+              )}
+              {!isCurrentPage('/teams') && (
+                <Menu.Item key="3"><Link to="/teams">Đội Tuyển</Link></Menu.Item>
+              )}
+              {!isCurrentPage('/scores') && (
+                <Menu.Item key="4"><Link to="/scores">Điểm Số</Link></Menu.Item>
+              )}
+              {!isCurrentPage('/evaluations') && (
+                <Menu.Item key="5"><Link to="/evaluations">Đánh Giá</Link></Menu.Item>
+              )}
+              {!isCurrentPage('/statistics') && (
+                <Menu.Item key="8"><Link to="/statistics">Thống Kê</Link></Menu.Item>
+              )}
+              
+              {/* Menu Quản lý học sinh (Chỉ Teacher/Admin thấy) */}
+              {canManage && !isCurrentPage('/students') && (
+                <Menu.Item key="6"><Link to="/students">Học Sinh</Link></Menu.Item>
+              )}
+              {canManage && !isCurrentPage('/teachers') && (
+                <Menu.Item key="7"><Link to="/teachers">Giáo Viên</Link></Menu.Item>
+              )}
+            </Menu>
+          )}
           
           {user ? (
             <div className="main-user-info">

@@ -65,7 +65,7 @@
   margin: 0;
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: none !important;
   background: linear-gradient(45deg, #fff, rgba(255, 255, 255, 0.8));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;

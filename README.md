@@ -67,8 +67,9 @@
 - **Accessibility**: WCAG compliant với proper contrast ratios cho cả light và dark mode
 
 ### 🎓 Phạm vi quản lý
-- **3 khối lớp**: 10, 11, 12 (27 đội tuyển tổng cộng)
-- **Đầy đủ dữ liệu**: 1 Admin + 27 Giáo viên + 136 Học sinh + 27 Teams
+- **9 đội tuyển theo môn**: Toán, Lý, Hóa, Sinh, Văn, Anh, Địa, Lịch sử, Tin học
+- **Đa khối trong một đội**: Học sinh khối 10, 11, 12 có thể cùng một đội tuyển
+- **Đầy đủ dữ liệu**: 1 Admin + 27 Giáo viên + 136 Học sinh + 9 Teams
 - **Dữ liệu đa năm**: HSG Quốc gia và Tỉnh từ 2021-2024, bao gồm cả học sinh đã tốt nghiệp
 - **Phân quyền chi tiết**: 
   - **Admin**: Toàn quyền quản lý hệ thống, chỉnh sửa giáo viên và team
@@ -114,7 +115,7 @@
                            ▼                   ▼
                     ┌─────────────┐     ┌─────────────┐
                     │    Team     │◀────│  TeamMember │
-                    │(subject,gr) │     │  (linkage)  │
+                    │(subject only)│     │  (linkage)  │
                     └──────┬──────┘     └─────────────┘
                            │
        ┌───────────────────┼───────────────────┐
@@ -142,6 +143,7 @@
 - ✅ Hiển thị số lượng sự kiện mỗi tháng
 
 ### 👨‍🏫 Quản lý Giáo viên
+
 - ✅ CRUD đầy đủ cho giáo viên (Admin only)
 - ✅ **Chỉnh sửa thông tin và đội phụ trách**: Form edit với dropdown chọn team
 - ✅ **Gán team thông minh**: Hiển thị team khả dụng, vô hiệu hóa team đã có giáo viên
@@ -154,11 +156,11 @@
 
 ### 👨‍🎓 Quản lý Học sinh & Đội
 - ✅ CRUD đầy đủ cho học sinh
-- ✅ Phân đội theo môn và khối (10/11/12)
+- ✅ **Đội tuyển theo môn học**: 9 đội tuyển (Toán, Lý, Hóa, Sinh, Văn, Anh, Địa, Lịch sử, Tin học)
+- ✅ **Đa khối trong một đội**: Học sinh khối 10, 11, 12 có thể cùng đội tuyển
 - ✅ **Thông tin học sinh đầy đủ**: Mã số, tên, khối, lớp, đội tuyển
 - ✅ Liên kết với tài khoản User
-- ✅ 27 đội tuyển (9 môn × 3 khối)
-- ✅ Mỗi đội có giáo viên phụ trách và học sinh
+- ✅ Mỗi đội có giáo viên phụ trách và học sinh đa khối
 - ✅ **Filter theo khối và loại lớp**: Lọc nhanh theo Khối 10/11/12 và Lớp A/T
 
 ### 🎯 Quản lý Điểm số

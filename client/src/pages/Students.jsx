@@ -92,7 +92,7 @@ export default function Students() {
       title: 'Mã số',
       dataIndex: 'studentId',
       key: 'studentId',
-      render: (text) => <Tag color="blue">{text}</Tag>,
+      render: (text) => text,
       sorter: (a, b) => {
         const idA = a.studentId || '';
         const idB = b.studentId || '';
@@ -140,10 +140,59 @@ export default function Students() {
       },
       filters: [
         { text: 'Lớp A', value: 'A' },
-        { text: 'Lớp T', value: 'T' }
+        { text: 'Lớp B', value: 'B' }
       ],
       onFilter: (value, record) => record.className && record.className.includes(value),
       sorter: (a, b) => (a.className || '').localeCompare(b.className || '')
+    },
+    {
+      title: 'Đội tuyển',
+      dataIndex: 'team',
+      key: 'team',
+      render: (team) => {
+        if (!team) return <Tag color="default">Chưa có đội</Tag>;
+        
+        // Color code based on subject
+        const subjectColors = {
+          'Toán': 'blue',
+          'Lý': 'purple',
+          'Hóa': 'green',
+          'Sinh': 'cyan',
+          'Văn': 'orange',
+          'Anh': 'red',
+          'Sử': 'gold',
+          'Địa': 'lime',
+          'Tin': 'magenta'
+        };
+        
+        const color = subjectColors[team.subject] || 'geekblue';
+        return (
+          <Tag color={color} title={`${team.name} - ${team.subject}`}>
+            {team.subject}
+          </Tag>
+        );
+      },
+      filters: [
+        { text: 'Toán', value: 'Toán' },
+        { text: 'Lý', value: 'Lý' },
+        { text: 'Hóa', value: 'Hóa' },
+        { text: 'Sinh', value: 'Sinh' },
+        { text: 'Văn', value: 'Văn' },
+        { text: 'Anh', value: 'Anh' },
+        { text: 'Sử', value: 'Sử' },
+        { text: 'Địa', value: 'Địa' },
+        { text: 'Tin', value: 'Tin' },
+        { text: 'Chưa có đội', value: null }
+      ],
+      onFilter: (value, record) => {
+        if (value === null) return !record.team;
+        return record.team && record.team.subject === value;
+      },
+      sorter: (a, b) => {
+        const teamA = a.team ? a.team.subject : '';
+        const teamB = b.team ? b.team.subject : '';
+        return teamA.localeCompare(teamB, 'vi');
+      }
     },
     {
       title: 'Thao tác',
@@ -169,13 +218,15 @@ export default function Students() {
     );
   }
 
-  // Lọc học sinh theo tên hoặc mã số
+  // Lọc học sinh theo tên, mã số, hoặc môn học
   const filteredStudents = students.filter(s => {
     const search = searchText.trim().toLowerCase();
     if (!search) return true;
     return (
       (s.name && s.name.toLowerCase().includes(search)) ||
-      (s.studentId && s.studentId.toLowerCase().includes(search))
+      (s.studentId && s.studentId.toLowerCase().includes(search)) ||
+      (s.team && s.team.subject && s.team.subject.toLowerCase().includes(search)) ||
+      (s.team && s.team.name && s.team.name.toLowerCase().includes(search))
     );
   });
 
@@ -200,15 +251,17 @@ export default function Students() {
       >
         {/* Search and Filter Section */}
         <div style={{ marginBottom: 24 }}>
-          <Space>
+          <Space wrap>
             <Input.Search
               allowClear
-              placeholder="Tìm kiếm theo tên hoặc mã số"
+              placeholder="Tìm kiếm theo tên, mã số, hoặc môn học"
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
-              style={{ width: 300 }}
+              style={{ width: 350 }}
             />
             <span>Tổng: <b>{filteredStudents.length}</b> học sinh</span>
+            <span>Có đội: <b>{filteredStudents.filter(s => s.team).length}</b></span>
+            <span>Chưa có đội: <b>{filteredStudents.filter(s => !s.team).length}</b></span>
           </Space>
         </div>
 
@@ -276,9 +329,11 @@ export default function Students() {
                 <Select.Option value="10A1">10A1</Select.Option>
                 <Select.Option value="10A2">10A2</Select.Option>
                 <Select.Option value="10A3">10A3</Select.Option>
-                <Select.Option value="10T1">10T1</Select.Option>
-                <Select.Option value="10T2">10T2</Select.Option>
-                <Select.Option value="10T3">10T3</Select.Option>
+                <Select.Option value="10A4">10A4</Select.Option>
+                <Select.Option value="10B1">10B1</Select.Option>
+                <Select.Option value="10B2">10B2</Select.Option>
+                <Select.Option value="10B3">10B3</Select.Option>
+                <Select.Option value="10B4">10B4</Select.Option>
               </Select.OptGroup>
               
               {/* Khối 11 */}
@@ -286,9 +341,10 @@ export default function Students() {
                 <Select.Option value="11A1">11A1</Select.Option>
                 <Select.Option value="11A2">11A2</Select.Option>
                 <Select.Option value="11A3">11A3</Select.Option>
-                <Select.Option value="11T1">11T1</Select.Option>
-                <Select.Option value="11T2">11T2</Select.Option>
-                <Select.Option value="11T3">11T3</Select.Option>
+                <Select.Option value="11A4">11A4</Select.Option>
+                <Select.Option value="11B1">11B1</Select.Option>
+                <Select.Option value="11B2">11B2</Select.Option>
+                <Select.Option value="11B3">11B3</Select.Option>
               </Select.OptGroup>
               
               {/* Khối 12 */}
@@ -296,9 +352,10 @@ export default function Students() {
                 <Select.Option value="12A1">12A1</Select.Option>
                 <Select.Option value="12A2">12A2</Select.Option>
                 <Select.Option value="12A3">12A3</Select.Option>
-                <Select.Option value="12T1">12T1</Select.Option>
-                <Select.Option value="12T2">12T2</Select.Option>
-                <Select.Option value="12T3">12T3</Select.Option>
+                <Select.Option value="12A4">12A4</Select.Option>
+                <Select.Option value="12B1">12B1</Select.Option>
+                <Select.Option value="12B2">12B2</Select.Option>
+                <Select.Option value="12B3">12B3</Select.Option>
               </Select.OptGroup>
             </Select>
           </Form.Item>

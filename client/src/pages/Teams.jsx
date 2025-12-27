@@ -1,12 +1,11 @@
 // File: client/src/pages/Teams.jsx
 
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Table, Button, Modal, Form, Input, Space, message, Collapse, Card, Tag, Typography, Select } from 'antd'
 // Import các hàm API
 import { 
   getTeams, createTeam, deleteTeam, getMembers, createMember, updateMember, deleteMember, 
-  getStudents, 
   getAvailableStudents
 } from '../utils/api' 
 
@@ -14,8 +13,7 @@ import { TeamOutlined, ReloadOutlined, UserAddOutlined, EditOutlined, DeleteOutl
 import AppLayout from '../components/Layout/AppLayout'
 import AppCard from '../components/UI/AppCard'
 
-const { Title, Text } = Typography;
-const { Panel } = Collapse;
+const { Text } = Typography;
 
 // =====================================================================
 // COMPONENT PHỤ: QUẢN LÝ THÀNH VIÊN (MemberManager)
@@ -358,6 +356,13 @@ export default function Teams(){
         navigate('/login');
         return;
       }
+      
+      // Debug: Log dữ liệu nhận được
+      console.log('Teams data received:', data);
+      if (data.teams && data.teams.length > 0) {
+        console.log('First team teachers:', data.teams[0].teachers);
+      }
+      
       // Sắp xếp theo khối (grade) tăng dần, sau đó theo tên môn (subject)
       const sortedTeams = (data.teams || []).sort((a, b) => {
         if (a.grade !== b.grade) {
@@ -467,12 +472,53 @@ export default function Teams(){
   const teamItems = teams.map((team) => ({
     key: team.id.toString(),
     label: (
-      <Space>
-        <TeamOutlined />
-        <strong>{team.name}</strong> 
-        {team.grade && <Tag color="blue">{team.grade}</Tag>}
-        <span style={{fontSize: 12, color: '#888'}}>({team.members ? team.members.length : 0} thành viên)</span>
-      </Space>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+        <Space>
+          <TeamOutlined />
+          <strong>{team.name}</strong> 
+          {team.grade && <Tag color="blue">Khối {team.grade}</Tag>}
+          {team.subject && <Tag color="green">{team.subject}</Tag>}
+          <span style={{fontSize: 12, color: '#888'}}>
+            ({team.members ? team.members.length : 0} học sinh)
+          </span>
+        </Space>
+        
+        {/* Hiển thị giáo viên */}
+        <Space>
+          {team.teachers && team.teachers.length > 0 ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ fontSize: 12, color: '#666' }}>Giáo viên:</span>
+              {team.teachers.slice(0, 2).map((teacher) => {
+                const roleColors = {
+                  'main': 'gold',
+                  'co-teacher': 'blue'
+                };
+                const roleIcons = {
+                  'main': '👨‍🏫',
+                  'co-teacher': '👥'
+                };
+                return (
+                  <Tag 
+                    key={teacher.id} 
+                    color={roleColors[teacher.role]} 
+                    size="small"
+                    title={`${teacher.name} - ${teacher.role === 'main' ? 'Trưởng nhóm' : 'Đồng giảng dạy'}`}
+                  >
+                    {roleIcons[teacher.role]} {teacher.name}
+                  </Tag>
+                );
+              })}
+              {team.teachers.length > 2 && (
+                <Tag color="default" size="small">
+                  +{team.teachers.length - 2} khác
+                </Tag>
+              )}
+            </div>
+          ) : (
+            <Tag color="red" size="small">Chưa có giáo viên</Tag>
+          )}
+        </Space>
+      </div>
     ),
     extra: (canCreateTeam && (userRole === 'admin' || (userRole === 'teacher' && teacherSubject === team.subject))) ? (
       <Button 
@@ -487,7 +533,70 @@ export default function Teams(){
         Xóa đội
       </Button>
     ) : null,
-    children: <MemberManager teamId={team.id} teamName={team.name} teamSubject={team.subject} />,
+    children: (
+      <div>
+        {/* Thông tin chi tiết giáo viên */}
+        {team.teachers && team.teachers.length > 0 && (
+          <Card 
+            size="small" 
+            title={<Text strong>Đội ngũ giáo viên ({team.teachers.length})</Text>}
+            style={{ marginBottom: 16 }}
+          >
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {team.teachers.map(teacher => {
+                const roleColors = {
+                  'main': 'gold',
+                  'co-teacher': 'blue'
+                };
+                const roleNames = {
+                  'main': 'Trưởng nhóm',
+                  'co-teacher': 'Đồng giảng dạy'
+                };
+                const roleIcons = {
+                  'main': '👨‍🏫',
+                  'co-teacher': '👥'
+                };
+                
+                return (
+                  <div key={teacher.id} style={{ 
+                    border: '1px solid #d9d9d9', 
+                    borderRadius: 6, 
+                    padding: 8, 
+                    backgroundColor: '#fafafa',
+                    minWidth: 200
+                  }}>
+                    <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
+                      {roleIcons[teacher.role]} {teacher.name}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#666', marginBottom: 2 }}>
+                      📧 {teacher.email}
+                    </div>
+                    <div style={{ fontSize: 12 }}>
+                      <Tag color={roleColors[teacher.role]} size="small">
+                        {roleNames[teacher.role]}
+                      </Tag>
+                      {teacher.isActive ? (
+                        <Tag color="green" size="small">Hoạt động</Tag>
+                      ) : (
+                        <Tag color="red" size="small">Tạm dừng</Tag>
+                      )}
+                    </div>
+                    {teacher.notes && (
+                      <div style={{ fontSize: 11, color: '#888', marginTop: 4, fontStyle: 'italic' }}>
+                        {teacher.notes}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+        
+        {/* Component quản lý thành viên */}
+        <MemberManager teamId={team.id} teamName={team.name} teamSubject={team.subject} />
+      </div>
+    ),
   }));
 
 

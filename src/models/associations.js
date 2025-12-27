@@ -6,6 +6,7 @@ const Teacher = require('./teacher');
 const Score = require('./Score');
 const Schedule = require('./Schedule');
 const Evaluation = require('./Evaluation');
+const TeamTeacher = require('./TeamTeacher');
 
 // Team - Student
 Team.hasMany(Student, { foreignKey: 'teamId', as: 'members' });
@@ -17,6 +18,27 @@ Student.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 // Teacher - User
 Teacher.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+// Team - Teacher (Many-to-Many through TeamTeacher)
+Team.belongsToMany(User, { 
+  through: TeamTeacher, 
+  foreignKey: 'teamId', 
+  otherKey: 'teacherId',
+  as: 'teachers'
+});
+
+User.belongsToMany(Team, { 
+  through: TeamTeacher, 
+  foreignKey: 'teacherId', 
+  otherKey: 'teamId',
+  as: 'teams'
+});
+
+// Direct associations for TeamTeacher
+TeamTeacher.belongsTo(Team, { foreignKey: 'teamId', as: 'team' });
+TeamTeacher.belongsTo(User, { foreignKey: 'teacherId', as: 'teacher' });
+Team.hasMany(TeamTeacher, { foreignKey: 'teamId', as: 'teamTeachers' });
+User.hasMany(TeamTeacher, { foreignKey: 'teacherId', as: 'teacherTeams' });
 
 // Score - Student (using 'member' alias to match frontend expectations)
 Score.belongsTo(Student, { foreignKey: 'memberId', as: 'member' });

@@ -4,13 +4,36 @@ const Student = require('../models/student');
 const bcrypt = require('bcryptjs');
 const { Op } = require('sequelize');
 
-// Lấy danh sách tất cả học sinh (join Student + User)
+// Import associations
+require('../models/associations');
+
+// Lấy danh sách tất cả học sinh (join Student + User) - với phân quyền
 exports.getAll = async (req, res) => {
   try {
+    const { id: userId, role } = req.user;
+    
     let where = {};
-    // Nếu là giáo viên thì chỉ lấy học sinh thuộc team mà giáo viên phụ trách
-    // Giáo viên được xem tất cả học sinh, không lọc theo team nữa
     let teamIncludeWhere = undefined;
+    
+    // Phân quyền theo role
+    if (role === 'user') {
+      // Học sinh chỉ xem được thông tin của chính mình
+      where.userId = userId;
+    } else if (role === 'teacher') {
+      // Giáo viên chỉ xem được học sinh trong team của mình
+      const Teacher = require('../models/teacher');
+      const teacher = await Teacher.findOne({ where: { userId } });
+      
+      if (teacher && teacher.subject) {
+        // Lọc theo môn học của giáo viên
+        teamIncludeWhere = { subject: teacher.subject };
+      } else {
+        // Nếu giáo viên không có môn học, không xem được ai
+        where.id = -1; // Điều kiện không bao giờ đúng
+      }
+    }
+    // Admin có thể xem tất cả (không thêm điều kiện where)
+
     const Team = require('../models/Team');
     const students = await Student.findAll({
       where,
@@ -23,24 +46,35 @@ exports.getAll = async (req, res) => {
         {
           model: Team,
           as: 'team',
-          attributes: ['id', 'name', 'teacherId'],
-          required: false
+          attributes: ['id', 'name', 'subject', 'teacherId'],
+          required: role === 'teacher', // Bắt buộc có team nếu là teacher
+          where: teamIncludeWhere
         }
       ],
       order: [['studentId', 'ASC']]
     });
+
     // Định dạng lại dữ liệu cho frontend
     const result = students.map(s => ({
-      id: s.user ? s.user.id : null,
+      id: s.id, // Sử dụng Student.id thay vì User.id
+      userId: s.userId, // Thêm userId để frontend có thể check
       name: s.name,
       studentId: s.studentId,
       grade: s.grade,
       className: s.className,
       email: s.user ? s.user.email : '',
+      team: s.team ? {
+        id: s.team.id,
+        name: s.team.name,
+        subject: s.team.subject
+      } : null,
       createdAt: s.user ? s.user.createdAt : '',
     }));
+
+    console.log(`Role ${role} can see ${result.length} students`);
     res.json({ students: result });
   } catch (err) {
+    console.error('Error in getAll students:', err);
     res.status(500).json({ error: err.message });
   }
 };

@@ -92,13 +92,28 @@ export default function Welcome() {
       subtitle="Hệ thống quản lý đội tuyển học sinh giỏi toàn diện"
     >
       {/* Hero Section */}
-      <AppCard variant="glass" size="large">
+      <AppCard variant="glass" size="large" className="welcome-hero-section">
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <TrophyOutlined style={{ fontSize: '80px', color: '#fa8c16', marginBottom: '24px' }} />
-          <Title level={1} style={{ marginBottom: '16px', color: '#1890ff' }}>
+          <Title level={1} style={{ 
+            marginBottom: '16px', 
+            color: '#ffffff', 
+            textShadow: 'none', 
+            WebkitTextStroke: 'none',
+            fontWeight: 'bold'
+          }}>
             HSG Management System
           </Title>
-          <Paragraph style={{ fontSize: '18px', marginBottom: '32px', maxWidth: '600px', margin: '0 auto 32px' }}>
+          <Paragraph style={{ 
+            fontSize: '18px', 
+            marginBottom: '32px', 
+            maxWidth: '600px', 
+            margin: '0 auto 32px', 
+            color: '#ffffff', 
+            textShadow: 'none',
+            WebkitTextStroke: 'none',
+            fontWeight: '500'
+          }}>
             Hệ thống quản lý đội tuyển học sinh giỏi hiện đại, giúp nhà trường tổ chức và theo dõi 
             hiệu quả quá trình đào tạo HSG từ cấp tỉnh đến quốc gia.
           </Paragraph>

@@ -2,9 +2,13 @@ const Team = require('../models/Team');
 const Student = require('../models/student');
 const User = require('../models/User'); 
 const Teacher = require('../models/teacher');
+const TeamTeacher = require('../models/TeamTeacher');
 const bcrypt = require('bcryptjs'); 
 const saltRounds = 10; 
 const { Op } = require('sequelize');
+
+// Import associations
+require('../models/associations');
 
 const handleSequelizeError = (err, res) => {
     if (err.name === 'SequelizeUniqueConstraintError') {
@@ -26,12 +30,38 @@ exports.getAll = async (req, res) => {
     if (role === 'admin') {
       // Admin xem tất cả
       teams = await Team.findAll({
-        include: [{ model: Student, as: 'members' }]
+        include: [
+          { model: Student, as: 'members' },
+          {
+            model: TeamTeacher,
+            as: 'teamTeachers',
+            include: [
+              {
+                model: User,
+                as: 'teacher',
+                attributes: ['id', 'name', 'email']
+              }
+            ]
+          }
+        ]
       });
     } else if (role === 'teacher') {
       // Teacher: Xem tất cả đội (để tham khảo) nhưng chỉ quản lý môn mình
       teams = await Team.findAll({
-        include: [{ model: Student, as: 'members' }]
+        include: [
+          { model: Student, as: 'members' },
+          {
+            model: TeamTeacher,
+            as: 'teamTeachers',
+            include: [
+              {
+                model: User,
+                as: 'teacher',
+                attributes: ['id', 'name', 'email']
+              }
+            ]
+          }
+        ]
       });
     } else {
       // User thường: Chỉ xem đội mình tham gia
@@ -48,11 +78,39 @@ exports.getAll = async (req, res) => {
 
       teams = await Team.findAll({
         where: { id: { [Op.in]: teamIds } },
-        include: [{ model: Student, as: 'members' }]
+        include: [
+          { model: Student, as: 'members' },
+          {
+            model: TeamTeacher,
+            as: 'teamTeachers',
+            include: [
+              {
+                model: User,
+                as: 'teacher',
+                attributes: ['id', 'name', 'email']
+              }
+            ]
+          }
+        ]
       });
     }
     
-    res.json({ teams });
+    // Format response to include teachers info
+    const formattedTeams = teams.map(team => ({
+      ...team.toJSON(),
+      teachers: team.teamTeachers ? team.teamTeachers.map(tt => ({
+        id: tt.teacher.id,
+        name: tt.teacher.name,
+        email: tt.teacher.email,
+        role: tt.role,
+        isActive: tt.isActive,
+        startDate: tt.startDate,
+        endDate: tt.endDate,
+        notes: tt.notes
+      })) : []
+    }));
+    
+    res.json({ teams: formattedTeams });
   } catch (err) {
     console.error('Error getAll teams:', err);
     res.status(500).json({ error: err.message });
@@ -82,7 +140,20 @@ exports.create = async (req, res) => {
 exports.getById = async (req, res) => {
   try {
     const team = await Team.findByPk(req.params.id, {
-      include: [{ model: Student, as: 'members' }]
+      include: [
+        { model: Student, as: 'members' },
+        {
+          model: TeamTeacher,
+          as: 'teamTeachers',
+          include: [
+            {
+              model: User,
+              as: 'teacher',
+              attributes: ['id', 'name', 'email']
+            }
+          ]
+        }
+      ]
     });
     if (!team) return res.status(404).json({ error: 'Not found' });
     
@@ -92,10 +163,22 @@ exports.getById = async (req, res) => {
        if (!isMember) return res.status(403).json({ error: 'Bạn không có quyền xem đội này' });
     }
     
-    // Check quyền Teacher (có thể xem tất cả team để tham khảo)
-    // Không cần check môn ở đây nữa
+    // Format response to include teachers info
+    const formattedTeam = {
+      ...team.toJSON(),
+      teachers: team.teamTeachers ? team.teamTeachers.map(tt => ({
+        id: tt.teacher.id,
+        name: tt.teacher.name,
+        email: tt.teacher.email,
+        role: tt.role,
+        isActive: tt.isActive,
+        startDate: tt.startDate,
+        endDate: tt.endDate,
+        notes: tt.notes
+      })) : []
+    };
 
-    res.json({ team });
+    res.json({ team: formattedTeam });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

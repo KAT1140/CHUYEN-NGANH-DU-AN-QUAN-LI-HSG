@@ -102,11 +102,7 @@
   --z-tooltip: 1060;
 }
 
-/* Global Styles */
-* {
-  box-sizing: border-box;
-}
-
+/* Global text stroke for better visibility on all pages */
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   line-height: 1.6;
@@ -117,10 +113,293 @@ body {
   transition: background-color var(--transition-normal), color var(--transition-normal);
 }
 
+/* Enhanced text visibility with stroke - COMPLETELY DISABLED */
+.welcome-hero-section .ant-typography,
+.welcome-hero-section h1,
+.welcome-hero-section h2,
+.welcome-hero-section h3 {
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+  font-weight: 600 !important;
+}
+
+/* Override for dark mode welcome page - NO STROKES */
+.dark-mode .welcome-hero-section .ant-typography,
+.dark-mode .welcome-hero-section h1,
+.dark-mode .welcome-hero-section h2,
+.dark-mode .welcome-hero-section h3 {
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+  font-weight: 600 !important;
+}
+
+/* Light mode - clear dark text */
+body:not(.dark-mode) .ant-typography,
+body:not(.dark-mode) .ant-card-head-title,
+body:not(.dark-mode) .ant-table-thead th,
+body:not(.dark-mode) .ant-menu-item,
+body:not(.dark-mode) .ant-tabs-tab,
+body:not(.dark-mode) .ant-tabs-tab-btn,
+body:not(.dark-mode) .ant-statistic-title,
+body:not(.dark-mode) .ant-statistic-content-value {
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+  color: #000000 !important; /* Đen đậm */
+  font-weight: 700 !important;
+}
+
+/* REMOVE ALL TEXT STROKES AND SHADOWS GLOBALLY */
+*,
+*::before,
+*::after,
+.ant-typography,
+.ant-card-head-title,
+.ant-table-thead th,
+.ant-menu-item,
+.ant-tabs-tab,
+.ant-tabs-tab-btn,
+.ant-statistic-title,
+.ant-statistic-content-value,
+h1, h2, h3, h4, h5, h6,
+p, span, div, a, strong, em, i, b,
+.welcome-hero-section *,
+.welcome-hero-section .ant-typography,
+.welcome-hero-section h1,
+.welcome-hero-section h2,
+.welcome-hero-section h3 {
+  -webkit-text-stroke: none !important;
+  text-shadow: none !important;
+}
+
+/* ULTIMATE OVERRIDE: Remove ALL strokes and shadows in dark mode */
+.dark-mode *,
+.dark-mode *::before,
+.dark-mode *::after,
+.dark-mode .ant-typography,
+.dark-mode .ant-card-head-title,
+.dark-mode .ant-table-thead th,
+.dark-mode .ant-menu-item,
+.dark-mode .ant-tabs-tab,
+.dark-mode .ant-tabs-tab-btn,
+.dark-mode .ant-statistic-title,
+.dark-mode .ant-statistic-content-value,
+.dark-mode h1,
+.dark-mode h2,
+.dark-mode h3,
+.dark-mode h4,
+.dark-mode h5,
+.dark-mode h6,
+.dark-mode p,
+.dark-mode span,
+.dark-mode div,
+.dark-mode a,
+.dark-mode strong,
+.dark-mode em,
+.dark-mode i,
+.dark-mode b {
+  -webkit-text-stroke: none !important;
+  text-shadow: none !important;
+}
+
+/* Dark mode text - bright white NO STROKE */
+.dark-mode .ant-typography,
+.dark-mode .ant-card-head-title,
+.dark-mode .ant-table-thead th,
+.dark-mode .ant-menu-item,
+.dark-mode .ant-tabs-tab,
+.dark-mode .ant-tabs-tab-btn,
+.dark-mode .ant-statistic-title,
+.dark-mode .ant-statistic-content-value {
+  color: #ffffff !important; /* Trắng sáng */
+  text-shadow: none !important; /* Xóa hết shadow */
+  -webkit-text-stroke: none !important; /* Xóa hết stroke */
+  font-weight: 700 !important;
+}
+
+/* Dark mode - NO STROKE FOR ANY TEXT */
+.dark-mode *[style*="color: #333"],
+.dark-mode *[style*="color: #666"], 
+.dark-mode *[style*="color: #000000"],
+.dark-mode *[style*="color: #000"],
+.dark-mode *[style*="color: rgb(0, 0, 0)"],
+.dark-mode *[style*="color: rgb(51, 51, 51)"],
+.dark-mode *[style*="color: rgb(102, 102, 102)"] {
+  -webkit-text-stroke: none !important;
+  text-shadow: none !important;
+}
+
+/* Remove borders from cards and components */
+.ant-card,
+.app-card,
+.app-card-glass {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dark-mode .ant-card,
+.dark-mode .app-card,
+.dark-mode .app-card-glass {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove borders from statistics cards */
+.ant-statistic {
+  border: none !important;
+}
+
+/* Remove borders from tables */
+.ant-table,
+.ant-table-thead > tr > th,
+.ant-table-tbody > tr > td {
+  border: none !important;
+}
+
+.dark-mode .ant-table,
+.dark-mode .ant-table-thead > tr > th,
+.dark-mode .ant-table-tbody > tr > td {
+  border: none !important;
+}
+
+/* Remove borders from select and input */
+.ant-select-selector,
+.ant-input {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dark-mode .ant-select-selector,
+.dark-mode .ant-input {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove borders from buttons */
+.ant-btn {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dark-mode .ant-btn {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove borders from progress bars */
+.ant-progress {
+  border: none !important;
+}
+
+/* Remove borders from avatars */
+.ant-avatar {
+  border: none !important;
+}
+
+/* Specific targeting for Statistics page elements - NO STROKE */
+.dark-mode h3[style*="color: #333"],
+.dark-mode h4[style*="color: #333"],
+.dark-mode p[style*="color: #666"],
+.dark-mode span[style*="color: #333"],
+.dark-mode strong[style*="color: #333"] {
+  -webkit-text-stroke: none !important;
+  text-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+/* Ensure white text has NO stroke in dark mode - FORCE OVERRIDE */
+.dark-mode *[style*="color: #ffffff"],
+.dark-mode *[style*="color: #fff"],
+.dark-mode *[style*="color: white"],
+.dark-mode *[style*="color: rgb(255, 255, 255)"],
+.dark-mode .ant-typography:not([style*="color: #333"]):not([style*="color: #666"]):not([style*="color: #000"]),
+.dark-mode .ant-typography,
+.dark-mode .ant-card-head-title,
+.dark-mode .ant-table-thead th,
+.dark-mode .ant-menu-item,
+.dark-mode .ant-tabs-tab,
+.dark-mode .ant-tabs-tab-btn,
+.dark-mode .ant-statistic-title,
+.dark-mode .ant-statistic-content-value,
+.dark-mode h1:not([style*="color: #333"]):not([style*="color: #666"]):not([style*="color: #000"]),
+.dark-mode h2:not([style*="color: #333"]):not([style*="color: #666"]):not([style*="color: #000"]),
+.dark-mode h3:not([style*="color: #333"]):not([style*="color: #666"]):not([style*="color: #000"]),
+.dark-mode h4:not([style*="color: #333"]):not([style*="color: #666"]):not([style*="color: #000"]),
+.dark-mode p:not([style*="color: #333"]):not([style*="color: #666"]):not([style*="color: #000"]),
+.dark-mode span:not([style*="color: #333"]):not([style*="color: #666"]):not([style*="color: #000"]),
+.dark-mode div:not([style*="color: #333"]):not([style*="color: #666"]):not([style*="color: #000"]) {
+  -webkit-text-stroke: none !important;
+  text-shadow: none !important;
+}
+
 /* Dark Mode Body Styles - Beautiful Midnight Blue Theme */
 body.dark-mode {
   background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
   min-height: 100vh;
+}
+
+/* Global Styles */
+* {
+  box-sizing: border-box;
+}
+
+/* Table text enhancement - NO STROKE */
+.dark-mode .ant-table-tbody > tr > td {
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+}
+
+/* Button text enhancement - NO STROKE */
+.ant-btn-primary,
+.dark-mode .ant-btn {
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+  font-weight: 500 !important;
+}
+
+/* Menu text enhancement - NO STROKE */
+.dark-mode .ant-menu-item {
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+}
+
+/* Light mode buttons - no stroke for dark text */
+body:not(.dark-mode) .ant-btn:not(.ant-btn-primary) {
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+}
+
+/* Enhanced text stroke for dark mode - NO STROKE */
+.dark-mode .ant-typography,
+.dark-mode .ant-typography h1,
+.dark-mode .ant-typography h2,
+.dark-mode .ant-typography h3,
+.dark-mode .ant-typography h4,
+.dark-mode .ant-typography h5,
+.dark-mode .ant-typography h6,
+.dark-mode .ant-card-head-title,
+.dark-mode .ant-table-thead th,
+.dark-mode .ant-menu-item,
+.dark-mode .ant-btn,
+.dark-mode .ant-statistic-title,
+.dark-mode .ant-statistic-content-value {
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+}
+
+/* Stronger stroke for headings in dark mode - NO STROKE */
+.dark-mode h1, 
+.dark-mode h2, 
+.dark-mode h3, 
+.dark-mode h4, 
+.dark-mode h5, 
+.dark-mode h6,
+.dark-mode .ant-typography h1,
+.dark-mode .ant-typography h2,
+.dark-mode .ant-typography h3,
+.dark-mode .ant-card-head-title {
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+  font-weight: 700 !important;
 }
 
 /* Dark Mode Layout */
@@ -257,6 +536,59 @@ body.dark-mode {
   transform: translateY(-1px);
 }
 
+/* Dark Mode Tabs - Bright white text */
+.dark-mode .ant-tabs-tab {
+  color: #ffffff !important; /* Trắng sáng */
+  background: rgba(248, 250, 252, 0.05) !important;
+  border: 1px solid rgba(71, 85, 105, 0.3) !important;
+  border-radius: 8px 8px 0 0 !important;
+  margin-right: 4px !important;
+  transition: all 0.3s ease !important;
+  font-weight: 700 !important; /* Đậm hơn */
+  text-shadow: none !important;
+}
+
+.dark-mode .ant-tabs-tab:hover {
+  color: #ffffff !important;
+  background: rgba(59, 130, 246, 0.15) !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+  transform: translateY(-1px) !important;
+}
+
+.dark-mode .ant-tabs-tab-active {
+  color: #ffffff !important;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.25) 0%, rgba(248, 250, 252, 0.1) 100%) !important;
+  border-color: #3b82f6 !important;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+  font-weight: 700 !important;
+}
+
+/* Light Mode Tabs - Black text */
+.ant-tabs-tab {
+  color: #000000 !important; /* Đen đậm */
+  background: rgba(255, 255, 255, 0.8) !important;
+  border: 1px solid rgba(217, 217, 217, 0.6) !important;
+  border-radius: 8px 8px 0 0 !important;
+  margin-right: 4px !important;
+  transition: all 0.3s ease !important;
+  font-weight: 700 !important; /* Đậm hơn */
+}
+
+.ant-tabs-tab:hover {
+  color: #000000 !important;
+  background: rgba(24, 144, 255, 0.05) !important;
+  border-color: rgba(24, 144, 255, 0.3) !important;
+  transform: translateY(-1px) !important;
+}
+
+.ant-tabs-tab-active {
+  color: #000000 !important;
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.1) 0%, rgba(255, 255, 255, 0.9) 100%) !important;
+  border-color: #1890ff !important;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2) !important;
+  font-weight: 700 !important;
+}
+
 /* Dark mode tags */
 .dark-mode .ant-tag {
   background: rgba(248, 250, 252, 0.1) !important;
@@ -268,6 +600,43 @@ body.dark-mode {
 .dark-mode .ant-tag:hover {
   background: rgba(248, 250, 252, 0.15) !important;
   transform: scale(1.05);
+}
+
+/* Page titles and headers - High contrast */
+.dark-mode .ant-page-header-heading-title,
+.dark-mode .ant-page-header-heading-sub-title {
+  color: #ffffff !important; /* Trắng sáng */
+  text-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+.ant-page-header-heading-title,
+.ant-page-header-heading-sub-title {
+  color: #000000 !important; /* Đen đậm */
+  font-weight: 700 !important;
+}
+
+/* App Layout titles */
+.dark-mode .app-layout-title {
+  color: #ffffff !important; /* Trắng sáng */
+  text-shadow: none !important;
+  font-weight: 700 !important;
+}
+
+.dark-mode .app-layout-subtitle {
+  color: #ffffff !important; /* Trắng sáng */
+  text-shadow: none !important;
+  font-weight: 600 !important;
+}
+
+.app-layout-title {
+  color: #000000 !important; /* Đen đậm */
+  font-weight: 700 !important;
+}
+
+.app-layout-subtitle {
+  color: #000000 !important; /* Đen đậm */
+  font-weight: 600 !important;
 }
 
 /* Dark mode pagination */
@@ -638,7 +1007,7 @@ body:not(.dark-mode) .theme-toggle-btn:hover {
   color: #f8fafc !important;
   font-size: 18px;
   font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  text-shadow: none !important;
 }
 
 .dark-mode .dashboard-calendar-card .ant-card-head {
@@ -700,7 +1069,7 @@ body:not(.dark-mode) .theme-toggle-btn:hover {
   color: #262626;
   font-size: 18px;
   font-weight: 600;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  text-shadow: none !important;
 }
 
 .dashboard-calendar-card .ant-card-head {
@@ -790,6 +1159,54 @@ body:not(.dark-mode) .theme-toggle-btn:hover {
   color: #f8fafc !important;
 }
 
+/* Welcome page specific styling - NO STROKE */
+.welcome-hero-section {
+  background: linear-gradient(135deg, rgba(24, 144, 255, 0.1) 0%, rgba(64, 169, 255, 0.05) 100%);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.welcome-hero-section .ant-typography {
+  color: #ffffff !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+  font-weight: bold !important;
+}
+
+.welcome-hero-section .ant-typography-caption {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+  font-weight: 500 !important;
+}
+
+/* Enhanced text stroke for better visibility - NO STROKE */
+.welcome-hero-section h1.ant-typography {
+  -webkit-text-stroke: none !important;
+  text-shadow: none !important;
+}
+
+.welcome-hero-section .ant-typography:not(h1) {
+  -webkit-text-stroke: none !important;
+  text-shadow: none !important;
+}
+
+/* Dark mode welcome page - NO STROKE */
+.dark-mode .welcome-hero-section {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(248, 250, 252, 0.08) 100%);
+}
+
+.dark-mode .welcome-hero-section .ant-typography {
+  color: #f8fafc !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+}
+
+.dark-mode .welcome-hero-section h1.ant-typography {
+  -webkit-text-stroke: none !important;
+  text-shadow: none !important;
+}
+
 /* Success, Warning, Error colors for dark mode */
 .dark-mode .ant-tag-success {
   background: rgba(16, 185, 129, 0.15) !important;
@@ -807,4 +1224,67 @@ body:not(.dark-mode) .theme-toggle-btn:hover {
   background: rgba(239, 68, 68, 0.15) !important;
   border-color: rgba(239, 68, 68, 0.3) !important;
   color: #f87171 !important;
+}
+
+/* FORCE HIGH CONTRAST TEXT FOR TABS - NO BORDERS */
+.ant-tabs-tab,
+.ant-tabs-tab-btn,
+.ant-tabs-tab .ant-tabs-tab-btn {
+  color: #000000 !important; /* Đen đậm */
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+  background: transparent !important; /* Không có nền */
+  border: none !important; /* Không có viền */
+  border-radius: 0 !important; /* Không có bo góc */
+  box-shadow: none !important; /* Không có shadow */
+}
+
+.dark-mode .ant-tabs-tab,
+.dark-mode .ant-tabs-tab-btn,
+.dark-mode .ant-tabs-tab .ant-tabs-tab-btn {
+  color: #ffffff !important; /* Trắng sáng */
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  text-shadow: none !important;
+  -webkit-text-stroke: none !important;
+  background: transparent !important; /* Không có nền */
+  border: none !important; /* Không có viền */
+  border-radius: 0 !important; /* Không có bo góc */
+  box-shadow: none !important; /* Không có shadow */
+}
+
+/* Tab active states - no borders */
+.ant-tabs-tab-active,
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #000000 !important;
+  font-weight: 900 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.dark-mode .ant-tabs-tab-active,
+.dark-mode .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #ffffff !important;
+  font-weight: 900 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+/* Remove tab container borders */
+.ant-tabs-content-holder {
+  border: none !important;
+  background: transparent !important;
+  border-radius: 0 !important;
+}
+
+.ant-tabs-nav {
+  margin-bottom: 16px !important;
+}
+
+.ant-tabs-nav::before {
+  border-bottom: none !important;
 }

@@ -6,6 +6,9 @@ const User = require('../models/User');
 const { Op } = require('sequelize');
 const { sequelize } = require('../config/database');
 
+// Import associations
+require('../models/associations');
+
 // Get statistics by year
 exports.getStatsByYear = async (req, res) => {
   try {
@@ -237,6 +240,124 @@ exports.getDashboardStats = async (req, res) => {
     });
   } catch (err) {
     console.error('Error getting dashboard stats:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get statistics for a specific student
+exports.getStudentStats = async (req, res) => {
+  try {
+    const { studentId, year } = req.params;
+    const { id, role } = req.user;
+
+    console.log('getStudentStats called:', { studentId, year, userId: id, role });
+
+    // Check permission
+    if (role === 'user') {
+      const student = await Student.findOne({ 
+        where: { id: studentId, userId: id } 
+      });
+      if (!student) {
+        console.log('Permission denied: user cannot view this student');
+        return res.status(403).json({ error: 'Không có quyền xem thống kê học sinh này' });
+      }
+    } else if (role === 'teacher') {
+      const teacher = await Teacher.findOne({ where: { userId: id } });
+      const student = await Student.findOne({
+        where: { id: studentId },
+        include: [{
+          model: Team,
+          as: 'team'
+        }]
+      });
+      
+      if (!student || !teacher || student.team?.subject !== teacher.subject) {
+        console.log('Permission denied: teacher cannot view this student');
+        return res.status(403).json({ error: 'Không có quyền xem thống kê học sinh này' });
+      }
+    }
+
+    let whereClause = { memberId: studentId };
+    
+    // Filter by year if provided - use createdAt instead of examDate for now
+    if (year) {
+      const startDate = new Date(`${year}-01-01`);
+      const endDate = new Date(`${year}-12-31 23:59:59`);
+      whereClause.createdAt = {
+        [Op.between]: [startDate, endDate]
+      };
+    }
+
+    console.log('Fetching scores with whereClause:', whereClause);
+
+    // Get all scores for this student
+    const scores = await Score.findAll({
+      where: whereClause,
+      include: [
+        { 
+          model: Student, 
+          as: 'member',
+          include: [{ model: Team, as: 'team' }]
+        }
+      ],
+      order: [['examDate', 'DESC']]
+    });
+
+    console.log('Found scores:', scores.length);
+
+    // Calculate statistics
+    const stats = {
+      studentId,
+      year: year || new Date().getFullYear(),
+      totalScores: scores.length,
+      averageScore: 0,
+      totalAwards: 0,
+      bySubject: {},
+      scores: scores
+    };
+
+    if (scores.length > 0) {
+      // Calculate average score (normalize to /10 scale)
+      const totalScore = scores.reduce((sum, s) => sum + (s.score / s.maxScore * 10), 0);
+      stats.averageScore = (totalScore / scores.length).toFixed(2);
+
+      // Count awards
+      stats.totalAwards = scores.filter(s => s.award && s.award !== 'Không đạt giải').length;
+
+      // Group by subject
+      scores.forEach(score => {
+        const subject = score.member?.team?.subject || 'Unknown';
+        if (!stats.bySubject[subject]) {
+          stats.bySubject[subject] = {
+            count: 0,
+            totalScore: 0,
+            avgScore: 0,
+            maxScore: 0,
+            minScore: 999,
+            maxScoreLimit: score.maxScore || 10
+          };
+        }
+        
+        const normalizedScore = (score.score / score.maxScore * 10);
+        stats.bySubject[subject].count++;
+        stats.bySubject[subject].totalScore += normalizedScore;
+        stats.bySubject[subject].maxScore = Math.max(stats.bySubject[subject].maxScore, normalizedScore);
+        stats.bySubject[subject].minScore = Math.min(stats.bySubject[subject].minScore, normalizedScore);
+      });
+
+      // Calculate averages by subject
+      Object.keys(stats.bySubject).forEach(subject => {
+        const data = stats.bySubject[subject];
+        data.avgScore = (data.totalScore / data.count).toFixed(2);
+        data.maxScore = data.maxScore.toFixed(2);
+        data.minScore = data.minScore.toFixed(2);
+      });
+    }
+
+    console.log('Returning stats:', stats);
+    res.json({ stats });
+  } catch (err) {
+    console.error('Error getStudentStats:', err);
     res.status(500).json({ error: err.message });
   }
 };
