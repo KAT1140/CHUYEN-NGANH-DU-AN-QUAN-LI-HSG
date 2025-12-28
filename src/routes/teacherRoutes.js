@@ -8,6 +8,9 @@ const { requireAdmin } = require('../middleware/adminMiddleware');
 // Lấy danh sách giáo viên
 router.get('/', auth, controller.getAll);
 
+// Lấy danh sách giáo viên có sẵn (chưa có team)
+router.get('/available', auth, controller.getAvailable);
+
 // Tạo giáo viên mới (chỉ admin)
 router.post('/', auth, requireAdmin, controller.create);
 

@@ -1,13 +1,15 @@
 /* MainContent.css */
+@import './GlobalTheme.css';
+
 .main-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  padding: 0 var(--space-lg);
+  background: linear-gradient(135deg, var(--gradient-start) 0%, var(--gradient-end) 100%);
+  box-shadow: var(--shadow-md);
   position: relative;
-  z-index: 1000;
+  z-index: var(--z-sticky);
 }
 
 .main-header-left {
@@ -24,11 +26,11 @@
 }
 
 .main-logo-text {
-  font-size: 24px;
-  font-weight: bold;
+  font-size: var(--font-size-xxl);
+  font-weight: var(--font-weight-bold);
   color: #ffffff;
   text-shadow: none !important;
-  transition: all 0.3s ease;
+  transition: var(--transition-normal);
 }
 
 .main-logo-text:hover {
@@ -42,16 +44,16 @@
   border-bottom: none !important;
   flex: 1;
   justify-content: center;
-  margin: 0 20px;
-  transition: all 0.3s ease;
+  margin: 0 var(--space-lg);
+  transition: var(--transition-normal);
   overflow: hidden;
 }
 
 .main-menu .ant-menu-item {
   color: rgba(255, 255, 255, 0.9) !important;
   border-bottom: 2px solid transparent !important;
-  transition: all 0.3s ease;
-  font-weight: 500;
+  transition: var(--transition-normal);
+  font-weight: var(--font-weight-medium);
 }
 
 .main-menu .ant-menu-item:hover {
@@ -70,20 +72,20 @@
 .main-user-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-sm);
   color: #fff;
 }
 
 .main-username {
   color: #ffffff;
-  font-size: 14px;
+  font-size: var(--font-size-sm);
   text-shadow: none !important;
   margin-right: 0;
 }
 
 /* Toggle button styling */
 .main-header-left .ant-btn {
-  transition: all 0.3s ease;
+  transition: var(--transition-normal);
 }
 
 .main-header-left .ant-btn:hover {
@@ -94,37 +96,37 @@
 
 /* Current page indicator */
 .current-page-indicator {
-  margin-left: 16px;
-  padding: 8px 16px;
+  margin-left: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
   background: rgba(255, 255, 255, 0.15);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   color: #ffffff;
-  font-weight: 500;
-  font-size: 14px;
+  font-weight: var(--font-weight-medium);
+  font-size: var(--font-size-sm);
   text-shadow: none !important;
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
-  transition: all 0.3s ease;
+  transition: var(--transition-normal);
 }
 
 .current-page-indicator:hover {
   background: rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-md);
 }
 
 /* Responsive design */
 @media (max-width: 768px) {
   .main-header {
-    padding: 0 16px;
+    padding: 0 var(--space-md);
   }
   
   .main-logo-text {
-    font-size: 20px;
+    font-size: var(--font-size-xl);
   }
   
   .main-menu {
-    margin: 0 10px;
+    margin: 0 var(--space-sm);
   }
   
   .main-username {
@@ -133,7 +135,7 @@
 }
 
 .main-content {
-  padding: 24px;
+  padding: var(--space-lg);
   min-height: 80vh;
 }
 

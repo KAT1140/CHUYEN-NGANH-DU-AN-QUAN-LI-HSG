@@ -1,6 +1,8 @@
 /* Statistics.css */
+@import './GlobalTheme.css';
+
 .statistics-actions {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-md);
   display: flex;
   justify-content: space-between;
   width: 100%;
@@ -12,52 +14,52 @@
 
 .statistics-loading {
   text-align: center;
-  padding: 50px;
+  padding: var(--space-xxl);
 }
 
 .statistics-cards-row {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-md);
 }
 
 .statistics-avg-score-good {
-  color: #3f8600;
+  color: var(--success-color);
 }
 
 .statistics-avg-score-normal {
-  color: #1890ff;
+  color: var(--primary-color);
 }
 
 .statistics-tables-row {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-md);
 }
 
 .statistics-empty {
   text-align: center;
-  padding: 50px;
-  color: #999;
+  padding: var(--space-xxl);
+  color: var(--text-tertiary);
 }
 
 .statistics-score-good {
-  font-weight: bold;
-  color: #52c41a;
+  font-weight: var(--font-weight-bold);
+  color: var(--success-color);
 }
 
 .statistics-score-medium {
-  font-weight: bold;
-  color: #1890ff;
+  font-weight: var(--font-weight-bold);
+  color: var(--primary-color);
 }
 
 .statistics-score-bad {
-  font-weight: bold;
-  color: #ff4d4f;
+  font-weight: var(--font-weight-bold);
+  color: var(--error-color);
 }
 
 .statistics-score-bold {
-  font-weight: bold;
+  font-weight: var(--font-weight-bold);
 }
 
 .statistics-top-score {
-  font-size: 16px;
-  font-weight: bold;
-  color: #52c41a;
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  color: var(--success-color);
 }

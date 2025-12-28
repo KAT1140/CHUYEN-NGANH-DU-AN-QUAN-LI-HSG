@@ -201,6 +201,59 @@ exports.update = async (req, res) => {
   }
 };
 
+// Lấy danh sách giáo viên có sẵn (chưa có trong team hoặc đúng môn)
+exports.getAvailable = async (req, res) => {
+  try {
+    const { subject } = req.query;
+    
+    // Lấy danh sách giáo viên theo môn (nếu có)
+    const whereCondition = {};
+    if (subject) {
+      whereCondition.subject = subject;
+    }
+    
+    const teachers = await Teacher.findAll({
+      where: whereCondition,
+      include: [
+        {
+          model: User,
+          as: 'user',
+          attributes: ['id', 'name', 'email', 'role']
+        }
+      ],
+      order: [['fullName', 'ASC']]
+    });
+
+    // Lấy danh sách giáo viên đã có trong team (từ bảng TeamTeacher)
+    const TeamTeacher = require('../models/TeamTeacher');
+    const assignedTeachers = await TeamTeacher.findAll({
+      attributes: ['teacherId']
+    });
+    const assignedTeacherIds = assignedTeachers.map(at => at.teacherId);
+
+    // Lọc ra những giáo viên chưa có trong team nào
+    const availableTeachers = teachers.filter(t => 
+      t.user && !assignedTeacherIds.includes(t.user.id)
+    );
+
+    // Định dạng lại cho frontend
+    const result = availableTeachers.map(t => ({
+      id: t.user.id,
+      name: t.fullName,
+      subject: t.subject,
+      department: t.department,
+      specialization: t.specialization,
+      email: t.email,
+      phoneNumber: t.phoneNumber
+    }));
+    
+    res.json({ teachers: result });
+  } catch (err) {
+    console.error('Error fetching available teachers:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 // Xóa giáo viên
 exports.delete = async (req, res) => {
   try {

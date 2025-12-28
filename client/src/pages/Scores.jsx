@@ -377,14 +377,36 @@ export default function Scores(){
       dataIndex: 'testName',
       key: 'examType',
       render: (testName) => {
+        if (!testName) return <Tag color="default">Chưa xác định</Tag>;
+        
         if (testName === 'HSG cấp tỉnh') {
           return <Tag color="gold">HSG Cấp tỉnh</Tag>;
         } else if (testName?.includes('HSG Quốc gia')) {
           return <Tag color="red">HSG Quốc gia</Tag>;
-        } else if (testName?.includes('Kiểm tra') || testName?.includes('kiểm tra')) {
+        } else if (testName?.includes('Kiểm tra đầu năm')) {
+          return <Tag color="blue">Kiểm tra đầu năm</Tag>;
+        } else if (testName?.includes('Kiểm tra giữa kỳ 1')) {
+          return <Tag color="cyan">Kiểm tra giữa kỳ 1</Tag>;
+        } else if (testName?.includes('Kiểm tra cuối kỳ 1')) {
+          return <Tag color="geekblue">Kiểm tra cuối kỳ 1</Tag>;
+        } else if (testName?.includes('Kiểm tra đầu kỳ 2')) {
+          return <Tag color="purple">Kiểm tra đầu kỳ 2</Tag>;
+        } else if (testName?.includes('Kiểm tra giữa kỳ 2')) {
+          return <Tag color="magenta">Kiểm tra giữa kỳ 2</Tag>;
+        } else if (testName?.includes('Kiểm tra cuối năm')) {
+          return <Tag color="volcano">Kiểm tra cuối năm</Tag>;
+        } else if (testName?.includes('Kiểm tra tháng')) {
+          // Trích xuất tháng từ tên bài kiểm tra
+          const monthMatch = testName.match(/tháng (\d+)/);
+          const month = monthMatch ? monthMatch[1] : '';
+          return <Tag color="lime">Kiểm tra tháng {month}</Tag>;
+        } else if (testName?.toLowerCase().includes('kiểm tra')) {
           return <Tag color="blue">Kiểm tra định kỳ</Tag>;
+        } else {
+          // Hiển thị tên gốc thay vì "Khác"
+          const cleanName = testName.length > 15 ? testName.substring(0, 15) + '...' : testName;
+          return <Tag color="default" title={testName}>{cleanName}</Tag>;
         }
-        return <Tag color="default">Khác</Tag>;
       }
     },
     {
@@ -468,56 +490,52 @@ export default function Scores(){
       dataIndex: 'notes',
       key: 'notes',
       render: (notes, record) => {
-        if (!notes) return '-';
+        // Tạo ghi chú dựa trên loại kỳ thi
+        let displayNote = '';
         
-        // Đối với kiểm tra hằng tháng, hiển thị "Kiểm tra định kỳ tháng X"
-        if (record.testName?.includes('Kiểm tra tháng')) {
+        if (record.testName === 'HSG cấp tỉnh') {
+          displayNote = 'Kỳ thi học sinh giỏi cấp tỉnh';
+        } else if (record.testName?.includes('HSG Quốc gia')) {
+          displayNote = 'Kỳ thi học sinh giỏi quốc gia';
+        } else if (record.testName?.includes('Kiểm tra đầu năm')) {
+          displayNote = 'Kiểm tra đánh giá đầu năm học';
+        } else if (record.testName?.includes('Kiểm tra giữa kỳ 1')) {
+          displayNote = 'Kiểm tra giữa học kỳ I';
+        } else if (record.testName?.includes('Kiểm tra cuối kỳ 1')) {
+          displayNote = 'Kiểm tra cuối học kỳ I';
+        } else if (record.testName?.includes('Kiểm tra đầu kỳ 2')) {
+          displayNote = 'Kiểm tra đầu học kỳ II';
+        } else if (record.testName?.includes('Kiểm tra giữa kỳ 2')) {
+          displayNote = 'Kiểm tra giữa học kỳ II';
+        } else if (record.testName?.includes('Kiểm tra cuối năm')) {
+          displayNote = 'Kiểm tra tổng kết cuối năm học';
+        } else if (record.testName?.includes('Kiểm tra tháng')) {
           const monthMatch = record.testName.match(/tháng (\d+)/);
           const month = monthMatch ? monthMatch[1] : '';
-          return (
-            <span 
-              title={`Kiểm tra định kỳ tháng ${month}`}
-              style={{ 
-                maxWidth: '150px', 
-                overflow: 'hidden', 
-                textOverflow: 'ellipsis', 
-                whiteSpace: 'nowrap',
-                display: 'inline-block'
-              }}
-            >
-              Kiểm tra định kỳ tháng {month}
-            </span>
-          );
+          displayNote = `Kiểm tra định kỳ tháng ${month}`;
+        } else if (record.testName?.includes('Kiểm tra') || record.testName?.includes('kiểm tra')) {
+          displayNote = 'Kiểm tra định kỳ';
+        } else {
+          displayNote = notes || 'Không có ghi chú';
         }
         
-        // Đối với các kiểm tra khác, hiển thị loại kiểm tra
-        if (record.testName?.includes('Kiểm tra đầu năm')) {
-          return <span>Kiểm tra đầu năm học</span>;
-        } else if (record.testName?.includes('Kiểm tra giữa kỳ 1')) {
-          return <span>Kiểm tra giữa học kỳ 1</span>;
-        } else if (record.testName?.includes('Kiểm tra cuối kỳ 1')) {
-          return <span>Kiểm tra cuối học kỳ 1</span>;
-        } else if (record.testName?.includes('Kiểm tra đầu kỳ 2')) {
-          return <span>Kiểm tra đầu học kỳ 2</span>;
-        } else if (record.testName?.includes('Kiểm tra giữa kỳ 2')) {
-          return <span>Kiểm tra giữa học kỳ 2</span>;
-        } else if (record.testName?.includes('Kiểm tra cuối năm')) {
-          return <span>Kiểm tra cuối năm học</span>;
+        // Nếu có ghi chú riêng và không phải là ghi chú tự động, hiển thị cả hai
+        if (notes && notes !== displayNote && !notes.includes('Kiểm tra định kỳ môn')) {
+          displayNote = `${displayNote} - ${notes}`;
         }
         
-        // Mặc định hiển thị ghi chú gốc (rút gọn)
         return (
           <span 
-            title={notes} 
+            title={displayNote}
             style={{ 
-              maxWidth: '120px', 
+              maxWidth: '200px', 
               overflow: 'hidden', 
               textOverflow: 'ellipsis', 
               whiteSpace: 'nowrap',
               display: 'inline-block'
             }}
           >
-            {notes.replace('Kiểm tra định kỳ môn ', '').replace('Kiểm tra định kỳ', 'Định kỳ')}
+            {displayNote}
           </span>
         );
       }
@@ -681,12 +699,29 @@ export default function Scores(){
             rules={[{ required: true, message: 'Vui lòng nhập tên bài kiểm tra!' }]}
           >
             <Select placeholder="Chọn loại bài kiểm tra">
-              <Select.Option value="HSG cấp tỉnh">HSG cấp tỉnh</Select.Option>
-              <Select.Option value="Kiểm tra đầu năm">Kiểm tra đầu năm</Select.Option>
-              <Select.Option value="Kiểm tra giữa kỳ 1">Kiểm tra giữa kỳ 1</Select.Option>
-              <Select.Option value="Kiểm tra cuối kỳ 1">Kiểm tra cuối kỳ 1</Select.Option>
-              <Select.Option value="Kiểm tra đầu kỳ 2">Kiểm tra đầu kỳ 2</Select.Option>
-              <Select.Option value="Kiểm tra giữa kỳ 2">Kiểm tra giữa kỳ 2</Select.Option>
+              <Select.OptGroup label="Kỳ thi HSG">
+                <Select.Option value="HSG cấp tỉnh">HSG cấp tỉnh</Select.Option>
+                <Select.Option value="HSG Quốc gia">HSG Quốc gia</Select.Option>
+              </Select.OptGroup>
+              <Select.OptGroup label="Kiểm tra định kỳ">
+                <Select.Option value="Kiểm tra đầu năm">Kiểm tra đầu năm</Select.Option>
+                <Select.Option value="Kiểm tra giữa kỳ 1">Kiểm tra giữa kỳ 1</Select.Option>
+                <Select.Option value="Kiểm tra cuối kỳ 1">Kiểm tra cuối kỳ 1</Select.Option>
+                <Select.Option value="Kiểm tra đầu kỳ 2">Kiểm tra đầu kỳ 2</Select.Option>
+                <Select.Option value="Kiểm tra giữa kỳ 2">Kiểm tra giữa kỳ 2</Select.Option>
+                <Select.Option value="Kiểm tra cuối năm">Kiểm tra cuối năm</Select.Option>
+              </Select.OptGroup>
+              <Select.OptGroup label="Kiểm tra hàng tháng">
+                <Select.Option value="Kiểm tra tháng 9">Kiểm tra tháng 9</Select.Option>
+                <Select.Option value="Kiểm tra tháng 10">Kiểm tra tháng 10</Select.Option>
+                <Select.Option value="Kiểm tra tháng 11">Kiểm tra tháng 11</Select.Option>
+                <Select.Option value="Kiểm tra tháng 12">Kiểm tra tháng 12</Select.Option>
+                <Select.Option value="Kiểm tra tháng 1">Kiểm tra tháng 1</Select.Option>
+                <Select.Option value="Kiểm tra tháng 2">Kiểm tra tháng 2</Select.Option>
+                <Select.Option value="Kiểm tra tháng 3">Kiểm tra tháng 3</Select.Option>
+                <Select.Option value="Kiểm tra tháng 4">Kiểm tra tháng 4</Select.Option>
+                <Select.Option value="Kiểm tra tháng 5">Kiểm tra tháng 5</Select.Option>
+              </Select.OptGroup>
             </Select>
           </Form.Item>
 

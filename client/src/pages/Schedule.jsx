@@ -52,6 +52,7 @@ export default function Schedule(){
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
   const [teacherSubject, setTeacherSubject] = useState(null);
+  const [teacherRole, setTeacherRole] = useState(null); // Thêm state cho role giáo viên
   
   // --- THÊM STATE QUẢN LÝ SỬA ---
   const [isEditMode, setIsEditMode] = useState(false);
@@ -60,9 +61,10 @@ export default function Schedule(){
 
   const [form] = Form.useForm();
   
-  // Lấy role để phân quyền (chỉ admin/teacher được thêm/sửa/xóa)
+  // Lấy role để phân quyền
   const userRole = localStorage.getItem('userRole') || 'user';
-  const canManageSchedule = userRole !== 'user'; 
+  // Chỉ admin hoặc giáo viên main mới được thêm/sửa/xóa lịch
+  const canManageSchedule = userRole === 'admin' || (userRole === 'teacher' && teacherRole === 'main'); 
 
   const fetchSchedules = async () => {
     setLoading(true);
@@ -127,7 +129,7 @@ export default function Schedule(){
     // Có thể thêm logic load dữ liệu theo tháng ở đây nếu cần
   }, [currentMonth]);
 
-  // Lấy môn của giáo viên nếu user là teacher
+  // Lấy môn và role của giáo viên nếu user là teacher
   const fetchTeacherSubject = async () => {
     if (userRole === 'teacher') {
       try {
@@ -136,10 +138,17 @@ export default function Schedule(){
           const data = await res.json();
           if (data.teacher && data.teacher.subject) {
             setTeacherSubject(data.teacher.subject);
+            
+            // Lấy role của giáo viên trong đội
+            const teamRes = await fetchAuth(`${API_BASE}/teams/teacher-role`);
+            if (teamRes.ok) {
+              const teamData = await teamRes.json();
+              setTeacherRole(teamData.role); // 'main' hoặc 'co-teacher'
+            }
           }
         }
       } catch (err) {
-        console.error('Error fetching teacher subject:', err);
+        console.error('Error fetching teacher info:', err);
       }
     }
   };
@@ -182,10 +191,16 @@ export default function Schedule(){
 
   // --- HÀM MỞ MODAL ĐỂ SỬA ---
   const openEditModal = (schedule) => {
-    // Kiểm tra quyền sửa: giáo viên chỉ được sửa lịch môn của mình
-    if (userRole === 'teacher' && teacherSubject && schedule.subject !== teacherSubject) {
-      message.warning(`Bạn chỉ có thể sửa lịch môn ${teacherSubject}`);
-      return;
+    // Kiểm tra quyền sửa: chỉ admin hoặc giáo viên main của môn đó
+    if (userRole === 'teacher') {
+      if (teacherRole !== 'main') {
+        message.warning('Chỉ giáo viên phụ trách mới có thể sửa lịch ôn tập');
+        return;
+      }
+      if (teacherSubject && schedule.subject !== teacherSubject) {
+        message.warning(`Bạn chỉ có thể sửa lịch môn ${teacherSubject}`);
+        return;
+      }
     }
     
     setIsEditMode(true);
@@ -249,9 +264,16 @@ export default function Schedule(){
   const handleDeleteEvent = async (id) => {
     // Tìm schedule để kiểm tra quyền
     const schedule = schedules.find(s => s.id === id);
-    if (userRole === 'teacher' && teacherSubject && schedule && schedule.subject !== teacherSubject) {
-      message.warning(`Bạn chỉ có thể xóa lịch môn ${teacherSubject}`);
-      return;
+    
+    if (userRole === 'teacher') {
+      if (teacherRole !== 'main') {
+        message.warning('Chỉ giáo viên phụ trách mới có thể xóa lịch ôn tập');
+        return;
+      }
+      if (teacherSubject && schedule && schedule.subject !== teacherSubject) {
+        message.warning(`Bạn chỉ có thể xóa lịch môn ${teacherSubject}`);
+        return;
+      }
     }
     
     if (!window.confirm('Bạn có chắc chắn muốn xóa lịch này?')) return;
@@ -473,7 +495,7 @@ export default function Schedule(){
                       borderLeftColor: schedule.subject ? getSubjectColor(schedule.subject) : '#1890ff'
                     }}
                     extra={
-                      // Chỉ hiện nút Sửa/Xóa nếu có quyền và (admin hoặc giáo viên môn đúng)
+                      // Chỉ hiện nút Sửa/Xóa nếu có quyền quản lý lịch
                       canManageSchedule && (userRole === 'admin' || (userRole === 'teacher' && teacherSubject === schedule.subject)) && (
                         <Space size="small">
                           {/* Nút Sửa */}

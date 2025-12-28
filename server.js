@@ -24,6 +24,11 @@ const Teacher = require('./src/models/teacher');
 require('./src/models/associations');
 
 // 4. Middlewares
+const cors = require('cors');
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', 'file://'],
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -88,7 +93,7 @@ if (fs.existsSync(clientDist)) {
 const start = async () => {
   try {
     await connectDB();
-    await sequelize.sync({ alter: true }); // Enable to create/update tables
+    await sequelize.sync({ force: false }); // Chỉ tạo bảng nếu chưa có
 
     if (process.env.NODE_ENV !== 'production') {
       try {

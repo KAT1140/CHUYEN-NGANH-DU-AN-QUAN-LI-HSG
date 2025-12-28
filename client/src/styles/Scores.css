@@ -1,6 +1,8 @@
 /* Scores.css */
+@import './GlobalTheme.css';
+
 .scores-actions {
-  margin-bottom: 16px;
+  margin-bottom: var(--space-md);
 }
 
 .scores-year-select {

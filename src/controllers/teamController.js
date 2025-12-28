@@ -216,16 +216,26 @@ exports.createMember = async (req, res) => {
     const team = await Team.findByPk(teamId);
     if (!team) return res.status(404).json({ error: 'Team not found' });
 
-    // Check quyền teacher đúng môn
-    if (role === 'teacher') {
-        if (!req.user.subject || team.subject !== req.user.subject) {
-            return res.status(403).json({ error: 'Bạn không được thêm thành viên vào đội môn khác' });
-        }
-    }
-
-    // Check user thường không được thêm
+    // Check quyền: chỉ admin hoặc chủ nhiệm của đội đó mới được thêm thành viên
     if (role === 'user') {
          return res.status(403).json({ error: 'Bạn không có quyền này' });
+    }
+    
+    if (role === 'teacher') {
+        // Kiểm tra xem giáo viên có phải là chủ nhiệm của đội này không
+        const isMainTeacher = await TeamTeacher.findOne({
+          where: {
+            teamId,
+            teacherId: userId,
+            role: 'main'
+          }
+        });
+        
+        if (!isMainTeacher) {
+          return res.status(403).json({ 
+            error: 'Chỉ có chủ nhiệm hoặc admin mới có thể thêm thành viên vào đội' 
+          });
+        }
     }
 
     // Logic tạo User nếu chưa có
@@ -274,12 +284,29 @@ exports.updateMember = async (req, res) => {
     const member = await Student.findByPk(memberId);
     if (!member) return res.status(404).json({ error: 'Thành viên không tồn tại' });
 
-    // Check quyền
+    // Check quyền: chỉ admin hoặc chủ nhiệm của đội đó mới được sửa thành viên
+    if (req.user.role === 'user') {
+      return res.status(403).json({ error: 'Bạn không có quyền này' });
+    }
+    
     if (req.user.role === 'teacher') {
-         const team = await Team.findByPk(member.teamId);
-         if (team && team.subject !== req.user.subject) {
-             return res.status(403).json({ error: 'Không có quyền chỉnh sửa' });
-         }
+        const team = await Team.findByPk(member.teamId);
+        if (team) {
+          // Kiểm tra xem giáo viên có phải là chủ nhiệm của đội này không
+          const isMainTeacher = await TeamTeacher.findOne({
+            where: {
+              teamId: team.id,
+              teacherId: req.user.id,
+              role: 'main'
+            }
+          });
+          
+          if (!isMainTeacher) {
+            return res.status(403).json({ 
+              error: 'Chỉ có chủ nhiệm hoặc admin mới có thể sửa thành viên' 
+            });
+          }
+        }
     }
 
     // Cập nhật thông tin User gốc nếu cần
@@ -313,11 +340,28 @@ exports.deleteMember = async (req, res) => {
     const member = await Student.findByPk(memberId);
     if (!member) return res.status(404).json({ error: 'Thành viên không tồn tại' });
 
-    // Check quyền
+    // Check quyền: chỉ admin hoặc chủ nhiệm của đội đó mới được xóa thành viên
+    if (req.user.role === 'user') {
+      return res.status(403).json({ error: 'Bạn không có quyền này' });
+    }
+    
     if (req.user.role === 'teacher') {
          const team = await Team.findByPk(member.teamId);
-         if (team && team.subject !== req.user.subject) {
-             return res.status(403).json({ error: 'Không có quyền xóa' });
+         if (team) {
+           // Kiểm tra xem giáo viên có phải là chủ nhiệm của đội này không
+           const isMainTeacher = await TeamTeacher.findOne({
+             where: {
+               teamId: team.id,
+               teacherId: req.user.id,
+               role: 'main'
+             }
+           });
+           
+           if (!isMainTeacher) {
+             return res.status(403).json({ 
+               error: 'Chỉ có chủ nhiệm hoặc admin mới có thể xóa thành viên' 
+             });
+           }
          }
     }
     
@@ -335,16 +379,25 @@ exports.deleteTeam = async (req, res) => {
     const team = await Team.findByPk(teamId);
     if (!team) return res.status(404).json({ error: 'Đội không tồn tại' });
 
-    // Check quyền: Chỉ Admin hoặc Teacher cùng môn mới được xóa
+    // Check quyền: Chỉ Admin hoặc chủ nhiệm của đội đó mới được xóa
     if (req.user.role === 'user') {
       return res.status(403).json({ error: 'Bạn không có quyền xóa đội' });
     }
 
     if (req.user.role === 'teacher') {
-      // Lấy thông tin giáo viên từ database
-      const teacher = await Teacher.findOne({ where: { userId: req.user.id } });
-      if (!teacher || !teacher.subject || team.subject !== teacher.subject) {
-        return res.status(403).json({ error: 'Bạn chỉ có quyền xóa đội cùng môn' });
+      // Kiểm tra xem giáo viên có phải là chủ nhiệm của đội này không
+      const isMainTeacher = await TeamTeacher.findOne({
+        where: {
+          teamId,
+          teacherId: req.user.id,
+          role: 'main'
+        }
+      });
+      
+      if (!isMainTeacher) {
+        return res.status(403).json({ 
+          error: 'Chỉ có chủ nhiệm hoặc admin mới có thể xóa đội' 
+        });
       }
     }
 
@@ -356,4 +409,134 @@ exports.deleteTeam = async (req, res) => {
   }
 };
 
+// --- 9. LẤY ROLE CỦA GIÁO VIÊN TRONG ĐỘI ---
+exports.getTeacherRole = async (req, res) => {
+  try {
+    const { id, role } = req.user;
+    
+    if (role !== 'teacher') {
+      return res.status(403).json({ error: 'Chỉ giáo viên mới có thể gọi API này' });
+    }
+
+    // Tìm role của giáo viên trong đội
+    const teamTeacher = await TeamTeacher.findOne({
+      where: { teacherId: id, isActive: true },
+      include: [
+        {
+          model: Team,
+          as: 'team',
+          attributes: ['id', 'name', 'subject']
+        }
+      ]
+    });
+
+    if (!teamTeacher) {
+      return res.json({ role: null, team: null });
+    }
+
+    res.json({ 
+      role: teamTeacher.role, // 'main' hoặc 'co-teacher'
+      team: teamTeacher.team
+    });
+  } catch (err) {
+    console.error('Error getting teacher role:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// --- 10. THÊM GIÁO VIÊN VÀO ĐỘI ---
+exports.addTeacherToTeam = async (req, res) => {
+  try {
+    const { teamId, teacherId, role = 'co-teacher' } = req.body;
+    const currentUserId = req.user.id;
+    const currentUserRole = req.user.role;
+
+    // Kiểm tra quyền: chỉ admin hoặc chủ nhiệm của đội này mới được thêm giáo viên
+    if (currentUserRole !== 'admin') {
+      if (currentUserRole !== 'teacher') {
+        return res.status(403).json({ error: 'Bạn không có quyền thêm giáo viên vào đội' });
+      }
+      
+      // Kiểm tra teacher hiện tại có phải chủ nhiệm của đội này không
+      const isMainTeacher = await TeamTeacher.findOne({
+        where: { 
+          teamId: teamId, 
+          teacherId: currentUserId, 
+          role: 'main'
+        }
+      });
+      
+      if (!isMainTeacher) {
+        return res.status(403).json({ error: 'Chỉ có chủ nhiệm hoặc admin mới có thể thêm giáo viên vào đội' });
+      }
+    }
+
+    // Kiểm tra đội có tồn tại không
+    const team = await Team.findByPk(teamId);
+    if (!team) {
+      return res.status(404).json({ error: 'Đội không tồn tại' });
+    }
+
+    // Kiểm tra giáo viên có tồn tại không
+    const teacher = await User.findOne({
+      where: { id: teacherId, role: 'teacher' }
+    });
+    if (!teacher) {
+      return res.status(404).json({ error: 'Giáo viên không tồn tại' });
+    }
+
+    // Kiểm tra giáo viên đã có trong đội chưa
+    const existingTeamTeacher = await TeamTeacher.findOne({
+      where: { teamId, teacherId }
+    });
+    if (existingTeamTeacher) {
+      return res.status(400).json({ error: 'Giáo viên này đã có trong đội' });
+    }
+
+    // Thêm giáo viên vào đội
+    const teamTeacher = await TeamTeacher.create({
+      teamId,
+      teacherId,
+      role,
+      isActive: true,
+      startDate: new Date()
+    });
+
+    res.status(201).json({ 
+      message: 'Thêm giáo viên vào đội thành công',
+      teamTeacher 
+    });
+  } catch (err) {
+    console.error('Error adding teacher to team:', err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
 module.exports = exports;
+
+// Lấy danh sách team mà giáo viên hiện tại là chủ nhiệm
+exports.getTeacherTeams = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    
+    // Tìm các team mà user này là chủ nhiệm (role = 'main')
+    const teamTeachers = await TeamTeacher.findAll({
+      where: {
+        teacherId: userId,
+        role: 'main'
+      },
+      include: [{
+        model: Team,
+        as: 'team',
+        attributes: ['id', 'name', 'subject', 'grade']
+      }]
+    });
+    
+    const teams = teamTeachers.map(tt => tt.team);
+    
+    res.json({ teams });
+  } catch (err) {
+    console.error('Error fetching teacher teams:', err);
+    res.status(500).json({ error: err.message });
+  }
+};

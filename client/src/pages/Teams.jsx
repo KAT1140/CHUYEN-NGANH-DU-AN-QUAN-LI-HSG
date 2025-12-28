@@ -32,6 +32,16 @@ function MemberManager({ teamId, teamName, teamSubject }){
   // Lấy role từ localStorage
   const userRole = localStorage.getItem('userRole') || 'user';
   const [teacherSubject, setTeacherSubject] = useState(null);
+  const [teacherTeams, setTeacherTeams] = useState([]); // Danh sách team mà giáo viên là chủ nhiệm
+  
+  // Kiểm tra xem giáo viên có quyền quản lý team này không
+  const canManageTeam = (teamId) => {
+    if (userRole === 'admin') return true;
+    if (userRole === 'teacher') {
+      return teacherTeams.some(t => t.id === teamId);
+    }
+    return false;
+  };
   
   // Lấy thông tin môn của giáo viên
   const fetchTeacherSubject = async () => {
@@ -220,16 +230,35 @@ function MemberManager({ teamId, teamName, teamSubject }){
         size="small" 
         title={<Text strong>Danh sách Thành viên ({members.length})</Text>} 
         extra={
-          canAddMember && (
+          <Space>
+            {canAddMember && (
+              <Button 
+                type="primary" 
+                size="small" 
+                icon={<UserAddOutlined />} 
+                onClick={() => setIsMemberModalVisible(true)}
+              >
+                Thêm thành viên
+              </Button>
+            )}
             <Button 
-              type="primary" 
+              type="default" 
               size="small" 
-              icon={<UserAddOutlined />} 
-              onClick={() => setIsMemberModalVisible(true)}
+              onClick={() => {
+                // Tìm team object từ teamId
+                const currentTeam = { id: teamId, name: teamName, subject: teamSubject };
+                // Gọi parent function
+                const parentComponent = document.querySelector('[data-team-component]');
+                if (parentComponent && parentComponent._handleAddTeacher) {
+                  parentComponent._handleAddTeacher(currentTeam);
+                } else {
+                  alert('Chức năng thêm giáo viên đang được phát triển');
+                }
+              }}
             >
-              Thêm thành viên
+              + Thêm GV
             </Button>
-          )
+          </Space>
         }
       >
         <Table 
@@ -320,13 +349,19 @@ export default function Teams(){
   const [allStudents, setAllStudents] = useState([]) // Dùng cho tạo team mới
   const [loading, setLoading] = useState(false)
   const [isModalVisible, setIsModalVisible] = useState(false)
+  const [isAddTeacherModalVisible, setIsAddTeacherModalVisible] = useState(false)
+  const [selectedTeamForTeacher, setSelectedTeamForTeacher] = useState(null)
+  const [availableTeachers, setAvailableTeachers] = useState([])
+  const [expandedKeys, setExpandedKeys] = useState([]) // Track expanded panels
   const [form] = Form.useForm()
+  const [addTeacherForm] = Form.useForm()
 
   const userRole = localStorage.getItem('userRole') || 'user';
   const canCreateTeam = userRole !== 'user'; 
   
   // Lấy thông tin môn của giáo viên
   const [teacherSubject, setTeacherSubject] = useState(null);
+  const [teacherTeams, setTeacherTeams] = useState([]); // Danh sách team mà giáo viên là chủ nhiệm
   
   const fetchTeacherSubject = async () => {
     if (userRole === 'teacher') {
@@ -355,12 +390,6 @@ export default function Teams(){
         message.error('Phiên đăng nhập không hợp lệ.');
         navigate('/login');
         return;
-      }
-      
-      // Debug: Log dữ liệu nhận được
-      console.log('Teams data received:', data);
-      if (data.teams && data.teams.length > 0) {
-        console.log('First team teachers:', data.teams[0].teachers);
       }
       
       // Sắp xếp theo khối (grade) tăng dần, sau đó theo tên môn (subject)
@@ -395,7 +424,41 @@ export default function Teams(){
     if (canCreateTeam && isModalVisible) {
       fetchStudentsForNewTeam();
     }
-  }, [canCreateTeam, isModalVisible])
+    
+    // Expose function để component con có thể gọi
+    const element = document.querySelector('[data-team-component]');
+    if (element) {
+      element._handleAddTeacher = handleAddTeacherToTeam;
+    }
+    
+    // Lấy danh sách team mà giáo viên là chủ nhiệm
+    if (userRole === 'teacher') {
+      fetchTeacherTeams();
+    }
+    
+    return () => {
+      // Cleanup
+      const element = document.querySelector('[data-team-component]');
+      if (element) {
+        delete element._handleAddTeacher;
+      }
+    };
+  }, [canCreateTeam, isModalVisible, userRole])
+
+  const fetchTeacherTeams = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/teams/teacher-teams', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTeacherTeams(data.teams || []);
+      }
+    } catch (err) {
+      console.error('Error fetching teacher teams:', err);
+    }
+  };
 
   const onCreate = async (values) => {
     try {
@@ -468,26 +531,119 @@ export default function Teams(){
     });
   };
   
+  // Functions xử lý thêm giáo viên vào đội
+  const fetchAvailableTeachers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`/api/teachers/available?subject=${selectedTeamForTeacher?.subject || ''}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAvailableTeachers(data.teachers || []);
+      }
+    } catch (err) {
+      console.error('Error fetching teachers:', err);
+      message.error('Lỗi tải danh sách giáo viên');
+    }
+  };
+
+  const handleAddTeacherToTeam = (team) => {
+    setSelectedTeamForTeacher(team);
+    setIsAddTeacherModalVisible(true);
+    fetchAvailableTeachers();
+  };
+
+  const onAddTeacherToTeam = async (values) => {
+    try {
+      message.loading({ content: 'Đang thêm giáo viên vào đội...', key: 'addTeacher' });
+      
+      const token = localStorage.getItem('token');
+      const res = await fetch('/api/teams/add-teacher', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          teamId: selectedTeamForTeacher.id,
+          teacherId: values.teacherId,
+          role: values.role || 'co-teacher'
+        })
+      });
+
+      const data = await res.json();
+      
+      if (!res.ok || data.error) {
+        message.error({ content: data.error || 'Lỗi thêm giáo viên', key: 'addTeacher' });
+        return;
+      }
+
+      message.success({ 
+        content: 'Thêm giáo viên vào đội thành công!', 
+        key: 'addTeacher', 
+        duration: 2 
+      });
+      
+      setIsAddTeacherModalVisible(false);
+      addTeacherForm.resetFields();
+      fetchTeams(); // Reload để hiển thị giáo viên mới
+      
+    } catch (err) {
+      message.error({ content: 'Lỗi mạng khi thêm giáo viên', key: 'addTeacher' });
+    }
+  };
+
+  const handleCancelAddTeacher = () => {
+    setIsAddTeacherModalVisible(false);
+    setSelectedTeamForTeacher(null);
+    addTeacherForm.resetFields();
+  };
+
+  // Handle expand/collapse của Collapse
+  const handleCollapseChange = (keys) => {
+    setExpandedKeys(keys);
+  };
   
-  const teamItems = teams.map((team) => ({
+  
+  const teamItems = teams.map((team) => {
+    const isExpanded = expandedKeys.includes(team.id.toString());
+    
+    return {
     key: team.id.toString(),
     label: (
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
-        <Space>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        width: '100%',
+        minWidth: 0,
+        overflow: 'visible'
+      }}>
+        <Space style={{ flex: 1, minWidth: 0 }}>
           <TeamOutlined />
-          <strong>{team.name}</strong> 
+          <strong style={{ whiteSpace: 'nowrap' }}>{team.name}</strong> 
           {team.grade && <Tag color="blue">Khối {team.grade}</Tag>}
           {team.subject && <Tag color="green">{team.subject}</Tag>}
-          <span style={{fontSize: 12, color: '#888'}}>
+          <span style={{fontSize: 12, color: '#888', whiteSpace: 'nowrap'}}>
             ({team.members ? team.members.length : 0} học sinh)
           </span>
         </Space>
         
-        {/* Hiển thị giáo viên */}
-        <Space>
-          {team.teachers && team.teachers.length > 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 12, color: '#666' }}>Giáo viên:</span>
+        {/* Hiển thị giáo viên - chỉ khi không expanded */}
+        {!isExpanded && team.teachers && team.teachers.length > 0 && (
+          <div style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 4,
+            flexShrink: 0,
+            maxWidth: '50%',
+            overflow: 'visible'
+          }}>
+            <span style={{ fontSize: 12, color: '#666', whiteSpace: 'nowrap' }}>
+              Giáo viên:
+            </span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
               {team.teachers.slice(0, 2).map((teacher) => {
                 const roleColors = {
                   'main': 'gold',
@@ -503,35 +659,62 @@ export default function Teams(){
                     color={roleColors[teacher.role]} 
                     size="small"
                     title={`${teacher.name} - ${teacher.role === 'main' ? 'Trưởng nhóm' : 'Đồng giảng dạy'}`}
+                    style={{ 
+                      margin: 0,
+                      whiteSpace: 'nowrap',
+                      maxWidth: '120px',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
+                    }}
                   >
                     {roleIcons[teacher.role]} {teacher.name}
                   </Tag>
                 );
               })}
               {team.teachers.length > 2 && (
-                <Tag color="default" size="small">
+                <Tag color="default" size="small" style={{ margin: 0 }}>
                   +{team.teachers.length - 2} khác
                 </Tag>
               )}
             </div>
-          ) : (
-            <Tag color="red" size="small">Chưa có giáo viên</Tag>
-          )}
-        </Space>
+          </div>
+        )}
+        
+        {/* Hiển thị "Chưa có giáo viên" chỉ khi không expanded và không có giáo viên */}
+        {!isExpanded && (!team.teachers || team.teachers.length === 0) && (
+          <Tag color="red" size="small" style={{ margin: 0 }}>
+            Chưa có giáo viên
+          </Tag>
+        )}
       </div>
     ),
-    extra: (canCreateTeam && (userRole === 'admin' || (userRole === 'teacher' && teacherSubject === team.subject))) ? (
-      <Button 
-        danger 
-        size="small" 
-        icon={<DeleteOutlined />} 
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDeleteTeam(team.id, team.name);
-        }}
-      >
-        Xóa đội
-      </Button>
+    extra: (userRole === 'admin' || (userRole === 'teacher' && teacherTeams.some(t => t.id === team.id))) ? (
+      <Space>
+        <Button 
+          type="primary"
+          size="small" 
+          icon={<UserAddOutlined />} 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleAddTeacherToTeam(team);
+          }}
+        >
+          Thêm GV
+        </Button>
+        {(userRole === 'admin' || (userRole === 'teacher' && teacherTeams.some(t => t.id === team.id))) && (
+          <Button 
+            danger 
+            size="small" 
+            icon={<DeleteOutlined />} 
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDeleteTeam(team.id, team.name);
+            }}
+          >
+            Xóa đội
+          </Button>
+        )}
+      </Space>
     ) : null,
     children: (
       <div>
@@ -596,8 +779,8 @@ export default function Teams(){
         {/* Component quản lý thành viên */}
         <MemberManager teamId={team.id} teamName={team.name} teamSubject={team.subject} />
       </div>
-    ),
-  }));
+    )
+  }});
 
 
   return (
@@ -605,28 +788,33 @@ export default function Teams(){
       title="Quản lý Đội tuyển HSG" 
       subtitle="Tổ chức và quản lý các đội tuyển học sinh giỏi"
     >
-      <AppCard 
-        title="Danh sách đội tuyển"
-        variant="glass"
-        extra={
-          <Space>
-            {canCreateTeam && (
-              <Button 
-                type="primary" 
-                icon={<TeamOutlined />} 
-                onClick={() => setIsModalVisible(true)}
-              >
-                Tạo đội mới
+      <div data-team-component="true">
+        <AppCard 
+          title="Danh sách đội tuyển"
+          variant="glass"
+          extra={
+            <Space>
+              {canCreateTeam && (
+                <Button 
+                  type="primary" 
+                  icon={<TeamOutlined />} 
+                  onClick={() => setIsModalVisible(true)}
+                >
+                  Tạo đội mới
+                </Button>
+              )}
+              
+              <Button onClick={fetchTeams} icon={<ReloadOutlined />} loading={loading}>
+                Làm mới danh sách
               </Button>
-            )}
-            
-            <Button onClick={fetchTeams} icon={<ReloadOutlined />} loading={loading}>
-              Làm mới danh sách
-            </Button>
-          </Space>
-        }
-      >
-        <Collapse items={teamItems} />
+            </Space>
+          }
+        >
+        <Collapse 
+          items={teamItems} 
+          onChange={handleCollapseChange}
+          activeKey={expandedKeys}
+        />
       </AppCard>
 
       {/* Modal Tạo Team Mới */}
@@ -676,6 +864,79 @@ export default function Teams(){
           </Form.Item>
         </Form>
       </Modal>
+
+      {/* Modal Thêm Giáo viên vào Đội */}
+      <Modal 
+        title={`Thêm giáo viên vào đội ${selectedTeamForTeacher?.name || ''} (${selectedTeamForTeacher?.subject || ''})`}
+        open={isAddTeacherModalVisible} 
+        footer={null} 
+        onCancel={handleCancelAddTeacher} 
+        destroyOnClose 
+        width={600}
+      >
+        <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#f0f2f5', borderRadius: 6 }}>
+          <strong>Đội: </strong>{selectedTeamForTeacher?.name}<br/>
+          <strong>Môn học: </strong>{selectedTeamForTeacher?.subject}<br/>
+          <strong>Khối: </strong>{selectedTeamForTeacher?.grade || 'Chưa xác định'}
+        </div>
+        
+        <Form 
+          form={addTeacherForm} 
+          layout="vertical" 
+          onFinish={onAddTeacherToTeam}
+        > 
+          <Form.Item 
+            name="teacherId" 
+            label={`Chọn giáo viên môn ${selectedTeamForTeacher?.subject || ''} (chưa có trong team nào)`}
+            rules={[{ required: true, message: 'Vui lòng chọn giáo viên!' }]} 
+          > 
+            <Select 
+              placeholder="Chọn giáo viên để thêm vào đội"
+              showSearch
+              filterOption={(input, option) =>
+                option.children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }
+              notFoundContent={availableTeachers.length === 0 ? "Không có giáo viên phù hợp" : "Không tìm thấy"}
+            >
+              {availableTeachers.map(teacher => (
+                <Select.Option key={teacher.id} value={teacher.id}>
+                  <div>
+                    <strong>{teacher.name}</strong> - {teacher.subject}
+                    <br/>
+                    <small style={{ color: '#666' }}>
+                      {teacher.email} | {teacher.specialization || 'Chưa có chuyên môn'}
+                    </small>
+                  </div>
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
+
+          <Form.Item 
+            name="role" 
+            label="Vai trò trong đội" 
+            initialValue="co-teacher"
+            rules={[{ required: true, message: 'Vui lòng chọn vai trò!' }]} 
+          > 
+            <Select placeholder="Chọn vai trò">
+              <Select.Option value="main">Trưởng nhóm</Select.Option>
+              <Select.Option value="co-teacher">Đồng giảng dạy</Select.Option>
+            </Select>
+          </Form.Item>
+          
+          <Form.Item>
+            <Space style={{ width: '100%', justifyContent: 'flex-end' }}>
+              <Button onClick={handleCancelAddTeacher}>
+                Hủy
+              </Button>
+              <Button type="primary" htmlType="submit">
+                Thêm giáo viên
+              </Button>
+            </Space>
+          </Form.Item>
+        </Form>
+      </Modal>
+      </div>
     </AppLayout>
   )
 }

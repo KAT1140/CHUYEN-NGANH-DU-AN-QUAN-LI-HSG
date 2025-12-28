@@ -11,6 +11,7 @@ import './styles/MainContent.css'
 import LoginPage from './pages/LoginPage'
 import Dashboard from './pages/Schedule' 
 import Teams from './pages/Teams'
+import TeamsTest from './pages/TeamsTest'
 import Scores from './pages/Scores'         
 import Home from './pages/Home'           
 import Welcome from './pages/Welcome'     // <--- Import Welcome page
