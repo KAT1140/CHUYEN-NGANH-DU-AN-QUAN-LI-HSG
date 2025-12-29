@@ -69,8 +69,9 @@
 ### 🎓 Phạm vi quản lý
 - **9 đội tuyển theo môn**: Toán, Lý, Hóa, Sinh, Văn, Anh, Địa, Lịch sử, Tin học
 - **Đa khối trong một đội**: Học sinh khối 10, 11, 12 có thể cùng một đội tuyển
-- **Đầy đủ dữ liệu**: 1 Admin + 27 Giáo viên + 136 Học sinh + 9 Teams
-- **Dữ liệu đa năm**: HSG Quốc gia và Tỉnh từ 2021-2024, bao gồm cả học sinh đã tốt nghiệp
+- **Đầy đủ dữ liệu**: 1 Admin + 27 Giáo viên + 180 Học sinh + 9 Teams
+- **Dữ liệu thực tế**: Tất cả tên người dùng đã được chuẩn hóa thành tên Việt Nam thực tế
+- **Dữ liệu đa năm**: HSG Quốc gia và Tỉnh từ 2021-2025, bao gồm cả học sinh đã tốt nghiệp
 - **Phân quyền chi tiết**: 
   - **Admin**: Toàn quyền quản lý hệ thống, chỉnh sửa giáo viên và team
   - **Giáo viên**: Quản lý đội phụ trách, lịch học & điểm số môn mình dạy
@@ -145,10 +146,13 @@
 ### 👨‍🏫 Quản lý Giáo viên
 
 - ✅ CRUD đầy đủ cho giáo viên (Admin only)
+- ✅ **Hệ thống đa giáo viên**: Mỗi đội có thể có nhiều giáo viên với vai trò khác nhau
+- ✅ **Phân quyền theo vai trò**: Trưởng nhóm (main) và Đồng giảng dạy (co-teacher)
 - ✅ **Chỉnh sửa thông tin và đội phụ trách**: Form edit với dropdown chọn team
 - ✅ **Gán team thông minh**: Hiển thị team khả dụng, vô hiệu hóa team đã có giáo viên
+- ✅ **Thêm giáo viên vào đội**: Chức năng thêm giáo viên với phân quyền phù hợp
 - ✅ Hiển thị môn dạy với color-coded tags
-- ✅ Cột "Đội phụ trách" với thông tin team
+- ✅ Cột "Đội phụ trách" với thông tin team và vai trò
 - ✅ Chuyên môn chi tiết (VD: "Đại số, Hình học, Giải tích")
 - ✅ Tổ môn và thông tin liên hệ
 - ✅ Tự động tạo User account khi thêm giáo viên
