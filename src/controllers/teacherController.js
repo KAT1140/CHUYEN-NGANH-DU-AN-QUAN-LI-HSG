@@ -20,38 +20,63 @@ exports.getAll = async (req, res) => {
       order: [['fullName', 'ASC']]
     });
 
-    // Lấy thông tin teams mà giáo viên phụ trách
+    // Lấy thông tin teams mà giáo viên phụ trách từ bảng TeamTeacher
+    const TeamTeacher = require('../models/TeamTeacher');
     const teacherIds = teachers.map(t => t.user ? t.user.id : null).filter(id => id !== null);
-    const teams = await Team.findAll({
+    
+    const teamTeachers = await TeamTeacher.findAll({
       where: {
-        teacherId: teacherIds
+        teacherId: teacherIds,
+        isActive: true // Bỏ điều kiện role: 'main' để lấy cả co-teacher
       },
-      attributes: ['id', 'name', 'subject', 'grade', 'teacherId']
+      include: [
+        {
+          model: Team,
+          as: 'team',
+          attributes: ['id', 'name', 'subject', 'grade']
+        }
+      ]
     });
 
-    // Tạo map teacherId -> team
+    // Tạo map teacherId -> team (với role info)
     const teacherTeamMap = {};
-    teams.forEach(team => {
-      teacherTeamMap[team.teacherId] = team;
+    teamTeachers.forEach(tt => {
+      if (tt.team) {
+        // Nếu giáo viên đã có team, ưu tiên role 'main'
+        if (!teacherTeamMap[tt.teacherId] || tt.role === 'main') {
+          teacherTeamMap[tt.teacherId] = {
+            ...tt.team.toJSON(),
+            role: tt.role
+          };
+        }
+      }
     });
 
     // Định dạng lại cho frontend
-    const result = teachers.map(t => ({
-      id: t.user ? t.user.id : null,
-      name: t.fullName,
-      subject: t.subject,
-      department: t.department,
-      specialization: t.specialization,
-      email: t.email,
-      phoneNumber: t.phoneNumber,
-      team: t.user && teacherTeamMap[t.user.id] ? {
-        id: teacherTeamMap[t.user.id].id,
-        name: teacherTeamMap[t.user.id].name,
-        grade: teacherTeamMap[t.user.id].grade
-      } : null
-    }));
+    const result = teachers.map(t => {
+      const teacherId = t.user ? t.user.id : null;
+      const hasTeam = teacherId && teacherTeamMap[teacherId];
+      
+      return {
+        id: teacherId,
+        name: t.fullName,
+        subject: t.subject,
+        department: t.department,
+        specialization: t.specialization,
+        email: t.email,
+        phoneNumber: t.phoneNumber,
+        team: hasTeam ? {
+          id: teacherTeamMap[teacherId].id,
+          name: teacherTeamMap[teacherId].name,
+          grade: teacherTeamMap[teacherId].grade,
+          subject: teacherTeamMap[teacherId].subject,
+          role: teacherTeamMap[teacherId].role // Thêm role info
+        } : null
+      };
+    });
     res.json({ teachers: result });
   } catch (err) {
+    console.error('Error in getAll teachers:', err);
     res.status(500).json({ error: err.message });
   }
 };
@@ -95,7 +120,14 @@ exports.create = async (req, res) => {
 
     // Gán team nếu có
     if (teamId) {
-      await Team.update({ teacherId: user.id }, { where: { id: teamId } });
+      const TeamTeacher = require('../models/TeamTeacher');
+      await TeamTeacher.create({
+        teamId: teamId,
+        teacherId: user.id,
+        role: 'main',
+        isActive: true,
+        startDate: new Date()
+      });
     }
 
     res.status(201).json({ 
@@ -179,16 +211,34 @@ exports.update = async (req, res) => {
     console.log('Updated teacher record');
 
     // Cập nhật team assignment
+    const TeamTeacher = require('../models/TeamTeacher');
+    
     if (teamId) {
-      // Xóa assignment cũ của giáo viên này
-      await Team.update({ teacherId: null }, { where: { teacherId: id } });
+      // Xóa assignment cũ của giáo viên này (chỉ role main)
+      await TeamTeacher.destroy({ 
+        where: { 
+          teacherId: id,
+          role: 'main'
+        } 
+      });
       
       // Gán team mới
-      await Team.update({ teacherId: id }, { where: { id: teamId } });
+      await TeamTeacher.create({
+        teamId: teamId,
+        teacherId: id,
+        role: 'main',
+        isActive: true,
+        startDate: new Date()
+      });
       console.log('Updated team assignment to:', teamId);
     } else {
       // Nếu không chọn team, xóa assignment
-      await Team.update({ teacherId: null }, { where: { teacherId: id } });
+      await TeamTeacher.destroy({ 
+        where: { 
+          teacherId: id,
+          role: 'main'
+        } 
+      });
       console.log('Removed team assignment');
     }
 

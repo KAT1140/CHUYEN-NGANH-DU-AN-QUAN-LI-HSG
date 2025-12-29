@@ -236,10 +236,27 @@ const Teachers = () => {
         if (!team) {
           return <Tag color="default">Chưa có đội</Tag>;
         }
+        
+        const roleColors = {
+          'main': 'gold',
+          'co-teacher': 'blue'
+        };
+        
+        const roleNames = {
+          'main': 'Chủ nhiệm',
+          'co-teacher': 'Đồng giảng dạy'
+        };
+        
         return (
-          <Tag color="blue" style={{ cursor: 'pointer' }}>
-            {team.name}
-          </Tag>
+          <div>
+            <Tag color="green" style={{ cursor: 'pointer', marginBottom: 4 }}>
+              {team.name}
+            </Tag>
+            <br />
+            <Tag color={roleColors[team.role] || 'blue'} size="small">
+              {roleNames[team.role] || team.role}
+            </Tag>
+          </div>
         );
       },
       sorter: (a, b) => {
@@ -262,8 +279,8 @@ const Teachers = () => {
     {
       title: 'Thao tác',
       key: 'action',
-      render: (_, record) => (
-        canManageTeachers && (
+      render: (_, record) => {
+        return canManageTeachers ? (
           <Space>
             <Button 
               size="small" 
@@ -281,8 +298,12 @@ const Teachers = () => {
               Xóa
             </Button>
           </Space>
-        )
-      )
+        ) : (
+          <span style={{ color: '#999', fontSize: '12px' }}>
+            Không có quyền
+          </span>
+        );
+      }
     }
   ];
 
@@ -296,7 +317,7 @@ const Teachers = () => {
         variant="glass"
         extra={
           <Space>
-            {canManageTeachers && (
+            {canManageTeachers ? (
               <Button 
                 type="primary" 
                 icon={<PlusOutlined />} 
@@ -304,6 +325,10 @@ const Teachers = () => {
               >
                 Thêm giáo viên
               </Button>
+            ) : (
+              <span style={{ color: '#999', fontSize: '12px' }}>
+                Chỉ admin mới có thể thêm giáo viên
+              </span>
             )}
             
             <Button 

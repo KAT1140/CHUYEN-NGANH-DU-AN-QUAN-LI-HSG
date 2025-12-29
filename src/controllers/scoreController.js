@@ -28,7 +28,7 @@ exports.getAll = async (req, res) => {
       }
     ];
 
-    if (role === 'student') {
+    if (role === 'user') {
       // Học sinh xem điểm của mình + điểm HSG các năm trước của môn mình
       const student = await Student.findOne({ 
         where: { userId: id },
@@ -44,7 +44,7 @@ exports.getAll = async (req, res) => {
         [Op.or]: [
           { memberId: student.id }, // Điểm của mình
           {
-            // Điểm HSG cấp tỉnh của môn mình (các năm trước)
+            // Điểm HSG cấp tỉnh của môn mình (các năm trước để tham khảo)
             testName: 'HSG cấp tỉnh',
             '$member.team.subject$': student.team?.subject || null
           }

@@ -24,7 +24,7 @@ export default function Scores(){
   const [selectedGrade, setSelectedGrade] = useState('all')
   const [selectedSubject, setSelectedSubject] = useState('all')
   const [selectedExamType, setSelectedExamType] = useState('all')
-  const [selectedYear, setSelectedYear] = useState('')
+  const [selectedYear, setSelectedYear] = useState(null)
   
   // Get available exam types based on selected year
   const getAvailableExamTypes = () => {
@@ -65,10 +65,14 @@ export default function Scores(){
     if (examType === 'hsg') {
       filtered = filtered.filter(s => s.testName === 'HSG cấp tỉnh');
     } else if (examType === 'hsg-national') {
-      filtered = filtered.filter(s => s.testName?.includes('HSG Quốc gia'));
+      filtered = filtered.filter(s => s.testName === 'HSG Quốc gia');
     } else if (examType === 'periodic') {
       filtered = filtered.filter(s => 
-        s.testName?.includes('Kiểm tra') || s.testName?.includes('kiểm tra')
+        s.testName && (
+          s.testName.includes('Kiểm tra') || 
+          s.testName.includes('kiểm tra')
+        ) && 
+        !s.testName.includes('HSG')
       );
     }
     // 'all' shows everything
@@ -84,7 +88,7 @@ export default function Scores(){
     }
     
     // Filter by year
-    if (year) {
+    if (year && year !== '' && year !== null) {
       filtered = filtered.filter(s => {
         if (s.examDate) {
           const examYear = new Date(s.examDate).getFullYear();
@@ -101,6 +105,18 @@ export default function Scores(){
   // Get user role
   const userRole = localStorage.getItem('userRole') || 'user'
   const canAddScore = userRole !== 'user'
+  const isStudent = userRole === 'user'
+
+  // Get subtitle based on role
+  const getSubtitle = () => {
+    if (isStudent) {
+      return "Xem điểm số của bạn và điểm HSG các năm trước để tham khảo";
+    } else if (userRole === 'teacher') {
+      return "Quản lý điểm thi và đánh giá học sinh trong môn của bạn";
+    } else {
+      return "Quản lý điểm thi và đánh giá học sinh";
+    }
+  };
 
   // Fetch all scores
   const fetchScores = async () => {
@@ -120,7 +136,7 @@ export default function Scores(){
         const fetchedScores = data.scores || []
         setAllScores(fetchedScores)
         
-        // Tự động chọn năm mới nhất
+        // Tự động chọn năm mới nhất hoặc năm hiện tại (có thể bỏ qua nếu muốn xem tất cả)
         if (fetchedScores.length > 0 && !selectedYear) {
           const years = [...new Set(fetchedScores
             .filter(s => s.examDate)
@@ -128,14 +144,19 @@ export default function Scores(){
           )].sort((a, b) => b - a);
           
           if (years.length > 0) {
-            const latestYear = years[0];
-            setSelectedYear(latestYear);
+            // Ưu tiên chọn năm 2025 nếu có, nếu không thì chọn năm mới nhất
+            const currentYear = new Date().getFullYear().toString();
+            const preferredYear = years.includes('2025') ? '2025' : 
+                                 years.includes(currentYear) ? currentYear : 
+                                 years[0];
             
-            // Filter by latest year
+            setSelectedYear(preferredYear);
+            
+            // Filter by preferred year
             const yearFiltered = fetchedScores.filter(s => {
               if (s.examDate) {
                 const examYear = new Date(s.examDate).getFullYear();
-                return examYear.toString() === latestYear;
+                return examYear.toString() === preferredYear;
               }
               return false;
             });
@@ -351,7 +372,29 @@ export default function Scores(){
       title: 'Tên học sinh',
       dataIndex: ['member', 'name'],
       key: 'studentName',
-      render: (_, record) => record.member?.name || 'N/A'
+      render: (_, record) => {
+        const studentName = record.member?.name || 'N/A';
+        const currentUser = localStorage.getItem('userName') || '';
+        const isMyScore = studentName === currentUser;
+        
+        return (
+          <div>
+            <span style={{ fontWeight: isMyScore ? 'bold' : 'normal' }}>
+              {studentName}
+            </span>
+            {isMyScore && isStudent && (
+              <Tag color="green" size="small" style={{ marginLeft: 8 }}>
+                Của bạn
+              </Tag>
+            )}
+            {!isMyScore && isStudent && (
+              <Tag color="blue" size="small" style={{ marginLeft: 8 }}>
+                Tham khảo
+              </Tag>
+            )}
+          </div>
+        );
+      }
     },
     {
       title: 'Khối',
@@ -424,12 +467,13 @@ export default function Scores(){
       title: 'Giải thưởng',
       dataIndex: 'award',
       key: 'award',
+      width: 150,
       render: (award, record) => {
         // Chỉ hiển thị giải cho kỳ thi HSG
         const isHSGExam = record.testName === 'HSG cấp tỉnh' || record.testName?.includes('HSG Quốc gia');
         
         if (!isHSGExam) {
-          return '-';
+          return <span style={{ color: '#999' }}>-</span>;
         }
         
         if (award) {
@@ -569,10 +613,10 @@ export default function Scores(){
   return (
     <AppLayout 
       title="Bảng Điểm HSG" 
-      subtitle="Quản lý điểm thi và đánh giá học sinh"
+      subtitle={getSubtitle()}
     >
       <AppCard 
-        title="Danh sách điểm số"
+        title={isStudent ? "Điểm số của bạn" : "Danh sách điểm số"}
         variant="glass"
         extra={
           <Space>
@@ -589,6 +633,9 @@ export default function Scores(){
               >
                 Thêm điểm
               </Button>
+            )}
+            {isStudent && (
+              <Tag color="blue">Chỉ xem</Tag>
             )}
             <Button icon={<ReloadOutlined />} onClick={fetchScores} loading={loading}>
               Làm mới
@@ -666,7 +713,8 @@ export default function Scores(){
             showQuickJumper: true,
             showTotal: (total, range) => `${range[0]}-${range[1]} của ${total} điểm`
           }}
-          scroll={{ x: 1200 }}
+          scroll={{ x: 1400 }}
+          size="small"
         />
       </AppCard>
 

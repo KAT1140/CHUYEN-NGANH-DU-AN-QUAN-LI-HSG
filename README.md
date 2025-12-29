@@ -386,9 +386,8 @@ Email: namvokat@gmail.com
 - **Thêm giáo viên**: Admin có thể thêm giáo viên mới (tự động tạo User account)
 
 ### 👨‍🎓 Quản lý Học sinh
-- **Thông tin đầy đủ**: Mã số, tên, khối (10/11/12), lớp (A/T), đội tuyển
-- **Form chọn lớp có cấu trúc**: Dropdown phân nhóm theo khối với đầy đủ tùy chọn A và T
-- **Filter thông minh**: Lọc theo khối (10/11/12) và loại lớp (A/T)
+- **Thông tin đầy đủ**: Mã số, tên, khối (10/11/12)
+- **Filter thông minh**: Lọc theo khối (10/11/12)
 - **Liên kết User**: Mỗi học sinh có tài khoản đăng nhập riêng
 - **Flexible assignment**: Có thể gán học sinh vào team bất kỳ lúc nào
 

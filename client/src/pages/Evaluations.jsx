@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Table, Button, Modal, Form, Input, Select, Space, message, DatePicker, Tag } from 'antd'
 import { PlusOutlined, DeleteOutlined, ReloadOutlined, EditOutlined } from '@ant-design/icons'
 import dayjs from 'dayjs'
-import { getEvaluations, getTeams, createEvaluation, deleteEvaluation, updateEvaluation } from '../utils/api'
+import { getEvaluations, getStudentsForEvaluation, createEvaluation, deleteEvaluation, updateEvaluation } from '../utils/api'
 import AppLayout from '../components/Layout/AppLayout'
 import AppCard from '../components/UI/AppCard'
 
@@ -18,37 +18,42 @@ export default function Evaluations(){
   const [form] = Form.useForm()
   
   const userRole = localStorage.getItem('userRole') || 'user'
-  const canManage = userRole !== 'user'
+  const canManage = userRole !== 'user' // Admin và Teacher đều có thể quản lý
+  const isStudent = userRole === 'user' // Học sinh chỉ xem
+
+  // Tạo subtitle phù hợp với role
+  const getSubtitle = () => {
+    if (isStudent) {
+      return "Xem đánh giá và nhận xét của giáo viên về bạn";
+    } else if (userRole === 'teacher') {
+      return "Quản lý đánh giá cho học sinh trong team của bạn";
+    } else {
+      return "Theo dõi và đánh giá quá trình học tập của học sinh";
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true)
     try {
-      const [evalData, teamsData] = await Promise.all([
-        getEvaluations(),
-        getTeams()
-      ])
-      
+      const evalData = await getEvaluations()
       setEvaluations(evalData.evaluations || [])
       
-      // Lấy danh sách thành viên từ các đội để đưa vào dropdown
-      if (teamsData.teams) {
-        const allMembers = []
-        teamsData.teams.forEach(team => {
-          if (team.members) {
-            team.members.forEach(m => {
-              allMembers.push({
-                id: m.id,
-                name: m.name,
-                studentId: m.studentId,
-                teamName: team.name
-              })
-            })
-          }
-        })
-        setMembers(allMembers)
+      // Chỉ load danh sách học sinh nếu có quyền quản lý
+      if (canManage) {
+        const studentsData = await getStudentsForEvaluation()
+        if (studentsData.students) {
+          const formattedMembers = studentsData.students.map(student => ({
+            id: student.id,
+            name: student.name,
+            studentId: student.studentId,
+            teamName: student.team?.name || 'Chưa có team'
+          }))
+          setMembers(formattedMembers)
+        }
       }
     } catch (err) {
-      message.error('Lỗi tải dữ liệu')
+      console.error('Error fetching data:', err);
+      message.error(`Lỗi tải dữ liệu: ${err.message || 'Không xác định'}`)
     } finally {
       setLoading(false)
     }
@@ -62,6 +67,7 @@ export default function Evaluations(){
       const payload = {
         memberId: values.memberId,
         content: values.content,
+        rating: values.rating,
         date: values.date ? values.date.format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD')
       }
       
@@ -95,6 +101,7 @@ export default function Evaluations(){
     form.setFieldsValue({
       memberId: record.memberId,
       content: record.content,
+      rating: record.rating,
       date: record.date ? dayjs(record.date) : dayjs()
     })
     setIsModalVisible(true)
@@ -122,7 +129,9 @@ export default function Evaluations(){
       render: (text, record) => (
         <div>
           <div style={{fontWeight:600}}>{text || 'Không xác định'}</div>
-          <div style={{fontSize:12, color:'#888'}}>{record.member?.studentId}</div>
+          <div style={{fontSize:12, color:'#888'}}>
+            {record.member?.studentId} • {record.member?.team?.name}
+          </div>
         </div>
       )
     },
@@ -130,6 +139,18 @@ export default function Evaluations(){
       title: 'Ngày',
       dataIndex: 'date',
       render: (d) => d ? dayjs(d).format('DD/MM/YYYY') : ''
+    },
+    {
+      title: 'Điểm',
+      dataIndex: 'rating',
+      key: 'rating',
+      width: 80,
+      render: (rating) => {
+        if (!rating) return '-';
+        const color = rating >= 9 ? 'green' : rating >= 7 ? 'blue' : rating >= 5 ? 'orange' : 'red';
+        return <Tag color={color}>{rating}/10</Tag>;
+      },
+      sorter: (a, b) => (a.rating || 0) - (b.rating || 0)
     },
     {
       title: 'Đánh giá / Nhận xét',
@@ -152,32 +173,42 @@ export default function Evaluations(){
       }
     },
     {
-      title: '',
+      title: 'Thao tác',
       key: 'action',
-      render: (_, record) => canManage && (
-        <Space>
-          <Button 
-            icon={<EditOutlined/>} 
-            size="small" 
-            onClick={() => handleEdit(record)}
-            title="Chỉnh sửa"
-          />
-          <Button 
-            danger 
-            icon={<DeleteOutlined/>} 
-            size="small" 
-            onClick={() => handleDelete(record.id)}
-            title="Xóa"
-          />
-        </Space>
-      )
+      render: (_, record) => {
+        if (isStudent) {
+          return <Tag color="blue">Chỉ xem</Tag>;
+        }
+        
+        if (canManage) {
+          return (
+            <Space>
+              <Button 
+                icon={<EditOutlined/>} 
+                size="small" 
+                onClick={() => handleEdit(record)}
+                title="Chỉnh sửa"
+              />
+              <Button 
+                danger 
+                icon={<DeleteOutlined/>} 
+                size="small" 
+                onClick={() => handleDelete(record.id)}
+                title="Xóa"
+              />
+            </Space>
+          );
+        }
+        
+        return null;
+      }
     }
   ]
 
   return (
     <AppLayout 
       title="Đánh giá Học sinh" 
-      subtitle="Theo dõi và đánh giá quá trình học tập của học sinh"
+      subtitle={getSubtitle()}
     >
       <AppCard 
         title="Danh sách đánh giá"
@@ -188,6 +219,9 @@ export default function Evaluations(){
               <Button type="primary" icon={<PlusOutlined/>} onClick={()=>setIsModalVisible(true)}>
                 Thêm đánh giá
               </Button>
+            )}
+            {isStudent && (
+              <Tag color="green">Đánh giá của bạn</Tag>
             )}
             <Button icon={<ReloadOutlined/>} onClick={fetchData}>Làm mới</Button>
           </Space>
@@ -242,6 +276,20 @@ export default function Evaluations(){
 
           <Form.Item name="date" label="Ngày đánh giá" initialValue={dayjs()}>
             <DatePicker style={{width:'100%'}} format="DD/MM/YYYY" />
+          </Form.Item>
+
+          <Form.Item 
+            name="rating" 
+            label="Điểm đánh giá (1-10)"
+            rules={[{required:true, message: 'Vui lòng chọn điểm!'}]}
+          >
+            <Select placeholder="Chọn điểm đánh giá">
+              {[10,9,8,7,6,5,4,3,2,1].map(score => (
+                <Select.Option key={score} value={score}>
+                  {score}/10 {score >= 9 ? '(Xuất sắc)' : score >= 7 ? '(Tốt)' : score >= 5 ? '(Trung bình)' : '(Cần cải thiện)'}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
 
           <Form.Item 

@@ -122,6 +122,11 @@ export async function getEvaluations(){
   return res.json();
 }
 
+export async function getStudentsForEvaluation(){
+  const res = await fetchAuth(`${API_BASE}/evaluations/students-for-evaluation`);
+  return res.json();
+}
+
 export async function createEvaluation(data){
   const res = await fetchAuth(`${API_BASE}/evaluations`, {
     method: 'POST',

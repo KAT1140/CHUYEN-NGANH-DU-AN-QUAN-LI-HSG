@@ -63,7 +63,7 @@ function MemberManager({ teamId, teamName, teamSubject }){
     }
   };
   
-  const canAddMember = userRole !== 'user' && (userRole === 'admin' || (userRole === 'teacher' && teacherSubject === teamSubject));
+  const canAddMember = canManageTeam(teamId);
 
   const fetchMembers = async () => { 
     setLoading(true);
@@ -96,6 +96,7 @@ function MemberManager({ teamId, teamName, teamSubject }){
   useEffect(() => {
       fetchMembers();
       fetchTeacherSubject();
+      fetchTeacherTeams(); // Thêm dòng này
       // Khi mở modal thêm mới thì mới cần load danh sách học sinh
       if (isMemberModalVisible) {
         fetchAvailableStudents();
@@ -241,23 +242,25 @@ function MemberManager({ teamId, teamName, teamSubject }){
                 Thêm thành viên
               </Button>
             )}
-            <Button 
-              type="default" 
-              size="small" 
-              onClick={() => {
-                // Tìm team object từ teamId
-                const currentTeam = { id: teamId, name: teamName, subject: teamSubject };
-                // Gọi parent function
-                const parentComponent = document.querySelector('[data-team-component]');
-                if (parentComponent && parentComponent._handleAddTeacher) {
-                  parentComponent._handleAddTeacher(currentTeam);
-                } else {
-                  alert('Chức năng thêm giáo viên đang được phát triển');
-                }
-              }}
-            >
-              + Thêm GV
-            </Button>
+            {canAddMember && (
+              <Button 
+                type="default" 
+                size="small" 
+                onClick={() => {
+                  // Tìm team object từ teamId
+                  const currentTeam = { id: teamId, name: teamName, subject: teamSubject };
+                  // Gọi parent function
+                  const parentComponent = document.querySelector('[data-team-component]');
+                  if (parentComponent && parentComponent._handleAddTeacher) {
+                    parentComponent._handleAddTeacher(currentTeam);
+                  } else {
+                    alert('Chức năng thêm giáo viên đang được phát triển');
+                  }
+                }}
+              >
+                + Thêm GV
+              </Button>
+            )}
           </Space>
         }
       >
@@ -445,6 +448,11 @@ export default function Teams(){
     };
   }, [canCreateTeam, isModalVisible, userRole])
 
+  // Debug useEffect để theo dõi teacherTeams
+  useEffect(() => {
+    console.log('Teacher teams updated:', teacherTeams);
+  }, [teacherTeams]);
+
   const fetchTeacherTeams = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -541,6 +549,9 @@ export default function Teams(){
       if (res.ok) {
         const data = await res.json();
         setAvailableTeachers(data.teachers || []);
+      } else {
+        console.error('Failed to fetch teachers:', res.status);
+        message.error('Lỗi tải danh sách giáo viên');
       }
     } catch (err) {
       console.error('Error fetching teachers:', err);
@@ -701,19 +712,17 @@ export default function Teams(){
         >
           Thêm GV
         </Button>
-        {(userRole === 'admin' || (userRole === 'teacher' && teacherTeams.some(t => t.id === team.id))) && (
-          <Button 
-            danger 
-            size="small" 
-            icon={<DeleteOutlined />} 
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDeleteTeam(team.id, team.name);
-            }}
-          >
-            Xóa đội
-          </Button>
-        )}
+        <Button 
+          danger 
+          size="small" 
+          icon={<DeleteOutlined />} 
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteTeam(team.id, team.name);
+          }}
+        >
+          Xóa đội
+        </Button>
       </Space>
     ) : null,
     children: (
