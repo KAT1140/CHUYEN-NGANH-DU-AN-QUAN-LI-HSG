@@ -247,10 +247,15 @@ const Teachers = () => {
           'co-teacher': 'Đồng giảng dạy'
         };
         
+        // Hiển thị tên đội + khối (nếu có)
+        const teamDisplay = team.grade 
+          ? `${team.name} (${team.grade})` 
+          : team.name;
+        
         return (
           <div>
             <Tag color="green" style={{ cursor: 'pointer', marginBottom: 4 }}>
-              {team.name}
+              {teamDisplay}
             </Tag>
             <br />
             <Tag color={roleColors[team.role] || 'blue'} size="small">

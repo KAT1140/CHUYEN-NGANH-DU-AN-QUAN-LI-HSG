@@ -327,6 +327,42 @@ export default function Home(){
         </Col>
       </Row>
 
+      {/* Student Schedule */}
+      <Row gutter={[16, 16]}>
+        <Col xs={24} lg={24}>
+          <AppCard 
+            title="Lịch học sắp tới" 
+            variant="glass"
+            extra={<Link to="/schedule">Xem tất cả</Link>}
+          >
+            <List
+              dataSource={mySchedules}
+              locale={{ emptyText: 'Không có lịch học sắp tới' }}
+              renderItem={item => (
+                <List.Item>
+                  <List.Item.Meta
+                    avatar={<Avatar icon={<CalendarOutlined />} style={{ backgroundColor: '#1890ff' }} />}
+                    title={
+                      <div>
+                        {item.subject} - {item.title?.split(' - ').pop()}
+                        <Tag color="blue" style={{ marginLeft: 8 }}>
+                          {dayjs(item.date).format('DD/MM')}
+                        </Tag>
+                      </div>
+                    }
+                    description={
+                      <div>
+                        <ClockCircleOutlined /> {item.time?.slice(0, 5)} • {item.subject}
+                      </div>
+                    }
+                  />
+                </List.Item>
+              )}
+            />
+          </AppCard>
+        </Col>
+      </Row>
+
       {/* Student Recent Activities */}
       <Row gutter={[16, 16]}>
         <Col xs={24} lg={12}>
@@ -664,7 +700,7 @@ export default function Home(){
           <AppCard variant="stats" size="small">
             <Statistic
               title={`Kỳ thi HSG`}
-              value={dayjs('2025-04-15').diff(dayjs(), 'day')}
+              value={dayjs('2026-04-15').diff(dayjs(), 'day')}
               prefix={<TrophyOutlined />}
               valueStyle={{ color: '#fa8c16' }}
               suffix="ngày"
@@ -708,6 +744,17 @@ export default function Home(){
                     style={{ width: '100%', height: '60px', borderColor: '#fa8c16', color: '#fa8c16' }}
                   >
                     Quản lý giáo viên
+                  </Button>
+                </Link>
+              </Col>
+              <Col xs={24} sm={12} md={6}>
+                <Link to="/schedule">
+                  <Button 
+                    type="default" 
+                    icon={<CalendarOutlined />}
+                    style={{ width: '100%', height: '60px', borderColor: '#722ed1', color: '#722ed1' }}
+                  >
+                    Quản lý lịch học
                   </Button>
                 </Link>
               </Col>

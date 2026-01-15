@@ -74,6 +74,11 @@ app.use('/api/students', require('./src/routes/studentRoutes'));
 app.use('/api/teachers', require('./src/routes/teacherRoutes'));
 app.use('/api/statistics', require('./src/routes/statisticsRoutes'));
 
+// Redirect old /dashboard to /schedule
+app.get('/dashboard', (req, res) => {
+  res.redirect('/schedule');
+});
+
 // Serve frontend
 const clientDist = path.join(__dirname, 'client', 'dist');
 const clientIndex = path.join(__dirname, 'client', 'index.html');
@@ -85,6 +90,30 @@ if (fs.existsSync(clientDist)) {
   });
 } else if (fs.existsSync(clientIndex)) {
   app.get('/', (req, res) => { res.sendFile(clientIndex); });
+} else if (process.env.NODE_ENV !== 'production') {
+  // Development mode: proxy all non-API requests to Vite server
+  try {
+    const { createProxyMiddleware } = require('http-proxy-middleware');
+    const viteUrl = process.env.VITE_DEV_SERVER || 'http://localhost:5173';
+    const viteProxy = createProxyMiddleware({
+      target: viteUrl,
+      changeOrigin: true,
+      ws: true,
+      logLevel: 'warn'
+    });
+    app.use('/', (req, res, next) => {
+      if (req.path.startsWith('/api')) return next();
+      viteProxy(req, res, next);
+    });
+    console.log('Proxying all non-API requests to', viteUrl);
+  } catch (err) {
+    console.warn('Proxy setup failed, using redirect fallback');
+    app.use((req, res, next) => {
+      if (req.path.startsWith('/api')) return next();
+      const viteUrl = process.env.VITE_DEV_SERVER || 'http://localhost:5173';
+      res.redirect(`${viteUrl}${req.originalUrl}`);
+    });
+  }
 } else {
   app.get('/', (req, res) => res.send('HSG backend — API available at /api/*'));
 }

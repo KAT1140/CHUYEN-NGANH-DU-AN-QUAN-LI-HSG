@@ -42,6 +42,12 @@ exports.getAll = async (req, res) => {
     const teacherTeamMap = {};
     teamTeachers.forEach(tt => {
       if (tt.team) {
+        console.log(`Team for teacher ${tt.teacherId}:`, {
+          name: tt.team.name,
+          grade: tt.team.grade,
+          subject: tt.team.subject,
+          role: tt.role
+        });
         // Nếu giáo viên đã có team, ưu tiên role 'main'
         if (!teacherTeamMap[tt.teacherId] || tt.role === 'main') {
           teacherTeamMap[tt.teacherId] = {

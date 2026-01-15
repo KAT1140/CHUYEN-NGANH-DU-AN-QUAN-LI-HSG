@@ -80,8 +80,8 @@ export default function MainContent(){
           {/* MENU CHÍNH - Ẩn menu item của trang hiện tại */}
           {user && (
             <Menu theme="dark" mode="horizontal" selectable={false} className="main-menu">
-              {!isCurrentPage('/dashboard') && (
-                <Menu.Item key="2"><Link to="/dashboard">Xem Lịch</Link></Menu.Item>
+              {!isCurrentPage('/schedule') && (
+                <Menu.Item key="2"><Link to="/schedule">Xem Lịch</Link></Menu.Item>
               )}
               {!isCurrentPage('/teams') && (
                 <Menu.Item key="3"><Link to="/teams">Đội Tuyển</Link></Menu.Item>
@@ -126,7 +126,7 @@ export default function MainContent(){
             <Route path="/welcome" element={<Welcome/>} />
             <Route path="/login" element={<LoginPage/>} />
             
-            <Route path="/dashboard" element={<Protected><Dashboard/></Protected>} />
+            <Route path="/schedule" element={<Protected><Dashboard/></Protected>} />
             <Route path="/teams" element={<Protected><Teams/></Protected>} />
             <Route path="/scores" element={<Protected><Scores/></Protected>} />
             <Route path="/evaluations" element={<Protected><Evaluations/></Protected>} />
