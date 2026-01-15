@@ -207,16 +207,7 @@ Complete theme switching<br>"Midnight Blue" palette
 </tr>
 </table>
 
-###  Chất lượng dữ liệu
 
-```diff
- 246 học sinh chuẩn hóa - Tên tiếng Việt đúng chuẩn, không trùng lặp
- 246 đánh giá hoàn thiện - Dấu câu đầy đủ, ngữ pháp chuẩn
- 1,800 buổi học thông minh - Tự động tạo cho năm 2026 (15/01 - 08/04)
- Countdown kỳ thi - Dashboard hiển thị số ngày còn lại (15/04/2026)
- Không ký tự lạ - Đã xóa tất cả ký tự tiếng Trung/Hàn
- Dữ liệu nhất quán - Đồng bộ giữa User, Student, Teacher, Team
-```
 
 ###  Quản lý Lịch học
 
